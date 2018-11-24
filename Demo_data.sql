@@ -36,5 +36,3 @@ SELECT * FROM dbo.sensor;
 SELECT * FROM dbo.measurement;
 SELECT * FROM dbo.sensor_group;
 SELECT * FROM dbo.subscriber;
-
---wos is
