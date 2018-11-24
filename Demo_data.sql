@@ -1,4 +1,4 @@
---Create station und location
+﻿--Create station und location
 INSERT INTO dbo.location (name) VALUES ('Testlocation'); -- point lass ich weg zum testen
 INSERT INTO dbo.station (loc_id,name) VALUES (1,'Aussenstation');
 --Create Type (bsp. Temperatur)
@@ -34,3 +34,5 @@ SELECT * FROM dbo.sensor;
 SELECT * FROM dbo.measurement;
 SELECT * FROM dbo.sensor_group;
 SELECT * FROM dbo.subscriber;
+
+--wos is
