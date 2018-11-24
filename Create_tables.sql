@@ -42,8 +42,8 @@ CREATE TABLE dbo.sensor (
     valid bit not NULL DEFAULT 1,
     correction_function VARCHAR(32),
     conversion_function VARCHAR(32),
-    valid_from DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_to DATETIME,
+    valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    valid_to DATETIME2,
     max_difference float,
     lower_bound float,
     upper_bound float,
@@ -53,9 +53,10 @@ CREATE TABLE dbo.sensor (
 );
 CREATE TABLE dbo.measurement (
     sensor_ID INT NOT NULL,
-    measure_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    measure_time DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
     value_orig FLOAT NOT NULL,
     value_corrected FLOAT NOT NULL,
+    invalid bit,
     CONSTRAINT PK_sensor_time PRIMARY KEY (sensor_ID,measure_time),
     CONSTRAINT FK_measurement_sensor FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID) 
 );
@@ -63,8 +64,8 @@ CREATE TABLE dbo.measurement (
 CREATE TABLE subscription(
     subscriber_ID INT NOT NULL,
     channel_ID INT NOT NULL,
-    valid_from DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_to DATETIME,
+    valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    valid_to DATETIME2,
     CONSTRAINT FK_subscriptionSubscriber_ID FOREIGN KEY (subscriber_ID) REFERENCES dbo.subscriber(subscriber_ID), 
     CONSTRAINT FK_subscriptionChannel_ID FOREIGN KEY (channel_ID) REFERENCES dbo.channel(channel_ID),
     CONSTRAINT PK_subcriber_channel PRIMARY KEY (subscriber_ID, channel_ID)
@@ -73,8 +74,8 @@ CREATE TABLE subscription(
 CREATE TABLE user_permission(
     subscriber_ID INT NOT NULL,
     sensor_ID INT NOT NULL,
-    valid_from DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_to DATETIME,
+    valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    valid_to DATETIME2,
     CONSTRAINT FK_permissionSubscriber_ID FOREIGN KEY (subscriber_ID) REFERENCES dbo.subscriber(subscriber_ID), 
     CONSTRAINT FK_permissionSensor_ID FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID),
     CONSTRAINT PK_subcriber_sensor PRIMARY KEY (subscriber_ID, sensor_ID)
@@ -83,8 +84,8 @@ CREATE TABLE user_permission(
 CREATE TABLE sensor_group(
     channel_ID INT NOT NULL,
     sensor_ID INT NOT NULL,
-    valid_from DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    valid_to DATETIME,
+    valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    valid_to DATETIME2,
     CONSTRAINT FK_groupChannel_ID FOREIGN KEY (channel_ID) REFERENCES dbo.channel(channel_ID), 
     CONSTRAINT FK_groupSensor_ID FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID),
     CONSTRAINT PK_channel_sensor PRIMARY KEY (channel_ID, sensor_ID)
