@@ -8,7 +8,9 @@ INSERT INTO dbo.sensor (station_ID,type_ID,name,[description],max_difference,low
 INSERT INTO dbo.sensor (station_ID,type_ID,name,[description],max_difference,lower_bound,upper_bound) VALUES (1,1,'Garten', 'So warm ists im Garten', 2,-25,40);
 --Create Messwert(Für jeden einen fiktiven)
 INSERT INTO dbo.measurement (sensor_ID,value_orig,value_corrected) VALUES (1,-10,-9);
+INSERT INTO dbo.measurement (sensor_ID,value_orig,value_corrected) VALUES (1,-9,-8);
 INSERT INTO dbo.measurement (sensor_ID,value_orig,value_corrected) VALUES (2,-11,-8);
+INSERT INTO dbo.measurement (sensor_ID,value_orig,value_corrected) VALUES (2,-10,-7);
 --Create Subscriber (fiktive namen)
 INSERT INTO dbo.subscriber (name,[description]) VALUES ('Sigismund','Das ist ein Test-Subscriber');
 INSERT INTO dbo.subscriber (name,[description]) VALUES ('Gertrude','Das ist ein Test-Subscriber');
