@@ -1,8 +1,8 @@
 CREATE TABLE dbo.location (
-    loc_ID int IDENTITY(1,1),
+    location_ID int IDENTITY(1,1),
     name varchar(32) NOT NULL,
     coordinates GEOGRAPHY, -- WSL PFUSCH CONSTRAINT FEHLT
-    CONSTRAINT PK_location_ID PRIMARY KEY (loc_ID)
+    CONSTRAINT PK_location_ID PRIMARY KEY (location_ID)
 );
 CREATE TABLE dbo.type(
     type_ID int IDENTITY(1,1),
@@ -26,12 +26,12 @@ CREATE TABLE dbo.channel(
     CONSTRAINT PK_channel_ID PRIMARY KEY (channel_ID)
 );
 CREATE TABLE dbo.station (
-    stat_ID int IDENTITY(1,1),
-    loc_ID int NOT NULL,
+    station_ID int IDENTITY(1,1),
+    location_ID int NOT NULL,
     name varchar(32) NOT NULL,
     description varchar(255),
-    CONSTRAINT PK_station_ID PRIMARY KEY (stat_ID),
-    CONSTRAINT FK_locationStation_ID FOREIGN KEY (loc_ID) REFERENCES dbo.location(loc_ID)
+    CONSTRAINT PK_station_ID PRIMARY KEY (station_ID),
+    CONSTRAINT FK_locationStation_ID FOREIGN KEY (location_ID) REFERENCES dbo.location(location_ID)
 );
 CREATE TABLE dbo.sensor (
     sensor_ID int IDENTITY(1,1),
@@ -48,16 +48,15 @@ CREATE TABLE dbo.sensor (
     lower_bound float,
     upper_bound float,
     CONSTRAINT PK_sensor_id PRIMARY KEY (sensor_ID),
-    CONSTRAINT FK_sensor_station FOREIGN KEY (station_ID) REFERENCES dbo.station (stat_ID),
+    CONSTRAINT FK_sensor_station FOREIGN KEY (station_ID) REFERENCES dbo.station (station_ID),
     CONSTRAINT FK_sensor_type FOREIGN KEY (type_ID) REFERENCES dbo.type (type_ID)
 );
 CREATE TABLE dbo.measurement (
-    measurement_ID int IDENTITY(1,1),
     sensor_ID INT NOT NULL,
     measure_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     value_orig FLOAT NOT NULL,
     value_corrected FLOAT NOT NULL,
-    CONSTRAINT PK_measurement_ID PRIMARY KEY (measurement_ID),
+    CONSTRAINT PK_sensor_time PRIMARY KEY (sensor_ID,measure_time),
     CONSTRAINT FK_measurement_sensor FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID) 
 );
 -- seltsame identifizierende magische beziehungen die keiner ganz versteht
