@@ -54,15 +54,29 @@ INSERT INTO dbo.sensor_group (channel_ID,sensor_ID) VALUES (2,3);
 INSERT INTO dbo.sensor_group (channel_ID,sensor_ID) VALUES (2,4);
 INSERT INTO dbo.sensor_group (channel_ID,sensor_ID) VALUES (2,5);
 GO
---Subscribe die Sigismund zum channel 1 (Alle Temperaturen)
+--Subscribe die Sigismund zum Channel 1 (Alle Temperaturen)
 INSERT INTO dbo.subscription (subscriber_ID,channel_ID) VALUES (1,1)
 GO
---Selects zum Testen
-SELECT * FROM dbo.[location];
-SELECT * FROM dbo.station;
-SELECT * FROM dbo.[type];
-SELECT * FROM dbo.channel;
-SELECT * FROM dbo.sensor;
-SELECT * FROM dbo.measurement;
-SELECT * FROM dbo.sensor_group;
-SELECT * FROM dbo.subscriber;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 1, measure_time, value_orig, value_orig FROM dbo.WS2301_humidity_ext;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 2, measure_time, value_orig, value_orig FROM dbo.WS2301_humidity_int;
+-- Fehler im Datenexport: Werte sind doppelt vorhanden, daher DISTINCT um die PK Constraints einzuhalten
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT DISTINCT 3, measure_time, value_orig, value_orig FROM dbo.ws2301_pabs;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 4, measure_time, value_orig, value_orig FROM dbo.ws2301_temp_ext;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 5, measure_time, value_orig, value_orig FROM dbo.WS2301_temp_int;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 6, measure_time, value_orig, value_orig AS value_corrected FROM dbo.WS2302_humidity_ext;
+-- Fehler im Datenexport: Spalten sind falsch benannt, daher andere Spaltennamen damit der Insert funktioniert
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 7, column1, column2, column2 FROM dbo.WS2302_humidity_int;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 8, measure_time, value_orig, value_orig FROM dbo.ws2302_pabs;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 9, measure_time, value_orig, value_orig FROM dbo.ws2302_temp_ext;
+INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 10, measure_time, value_orig, value_orig FROM dbo.WS2302_temp_int;
+GO
+
+--Selects zum testen
+--SELECT * FROM dbo.[location];
+--SELECT * FROM dbo.station;
+--SELECT * FROM dbo.[type];
+--SELECT * FROM dbo.channel;
+--SELECT * FROM dbo.sensor;
+--SELECT * FROM dbo.measurement;
+--SELECT * FROM dbo.sensor_group;
+--SELECT * FROM dbo.subscriber;

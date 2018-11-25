@@ -13,7 +13,7 @@ GO
 CREATE TABLE dbo.location (
     location_ID int IDENTITY(1,1),
     name varchar(32) NOT NULL,
-    coordinates GEOGRAPHY, -- WSL PFUSCH CONSTRAINT FEHLT
+    coordinates GEOGRAPHY, -- NOT NULL Constraint fehlt zu Testzwecken 
     CONSTRAINT PK_location_ID PRIMARY KEY (location_ID)
 );
 CREATE TABLE dbo.type(
@@ -72,7 +72,7 @@ CREATE TABLE dbo.measurement (
     CONSTRAINT PK_sensor_time PRIMARY KEY (sensor_ID,measure_time),
     CONSTRAINT FK_measurement_sensor FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID) 
 );
--- seltsame identifizierende magische beziehungen die keiner ganz versteht
+-- Beginn der identifizierenden Beziehungen
 CREATE TABLE dbo.subscription(
     subscriber_ID INT NOT NULL,
     channel_ID INT NOT NULL,
@@ -102,4 +102,4 @@ CREATE TABLE dbo.sensor_group(
     CONSTRAINT FK_groupSensor_ID FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID),
     CONSTRAINT PK_channel_sensor PRIMARY KEY (channel_ID, sensor_ID)
 );
--- ende der seltsamen magischen beziehungen
+-- Ende der identifizierenden Beziehungen
