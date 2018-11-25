@@ -53,7 +53,7 @@ CREATE TABLE dbo.sensor (
 );
 CREATE TABLE dbo.measurement (
     sensor_ID INT NOT NULL,
-    measure_time DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    measure_time DATETIMEOFFSET NOT NULL DEFAULT CURRENT_TIMESTAMP,
     value_orig FLOAT NOT NULL,
     value_corrected FLOAT NOT NULL,
     invalid bit,
