@@ -1,3 +1,15 @@
+
+--DROP TABLE dbo.sensor_group;
+--DROP TABLE dbo.user_permission;
+--DROP TABLE dbo.subscription;
+--DROP TABLE dbo.measurement;
+--DROP TABLE dbo.sensor;
+--DROP TABLE dbo.station;
+--DROP TABLE dbo.channel;
+--DROP TABLE dbo.subscriber;
+--DROP TABLE dbo.type;
+--DROP TABLE dbo.location;
+
 CREATE TABLE dbo.location (
     location_ID int IDENTITY(1,1),
     name varchar(32) NOT NULL,
@@ -12,7 +24,7 @@ CREATE TABLE dbo.type(
     unit_short VARCHAR(32),
     CONSTRAINT PK_type_id PRIMARY KEY (type_ID)
 );
-CREATE TABLE subscriber(
+CREATE TABLE dbo.subscriber(
     subscriber_ID int IDENTITY(1,1),
     name varchar(32) NOT NULL,
     description varchar(255),
@@ -61,7 +73,7 @@ CREATE TABLE dbo.measurement (
     CONSTRAINT FK_measurement_sensor FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID) 
 );
 -- seltsame identifizierende magische beziehungen die keiner ganz versteht
-CREATE TABLE subscription(
+CREATE TABLE dbo.subscription(
     subscriber_ID INT NOT NULL,
     channel_ID INT NOT NULL,
     valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -71,7 +83,7 @@ CREATE TABLE subscription(
     CONSTRAINT PK_subcriber_channel PRIMARY KEY (subscriber_ID, channel_ID)
 );
 
-CREATE TABLE user_permission(
+CREATE TABLE dbo.user_permission(
     subscriber_ID INT NOT NULL,
     sensor_ID INT NOT NULL,
     valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -81,7 +93,7 @@ CREATE TABLE user_permission(
     CONSTRAINT PK_subcriber_sensor PRIMARY KEY (subscriber_ID, sensor_ID)
 );
 
-CREATE TABLE sensor_group(
+CREATE TABLE dbo.sensor_group(
     channel_ID INT NOT NULL,
     sensor_ID INT NOT NULL,
     valid_from DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
