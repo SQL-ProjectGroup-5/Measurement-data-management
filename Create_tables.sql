@@ -1,14 +1,14 @@
-
---DROP TABLE dbo.sensor_group;
---DROP TABLE dbo.user_permission;
---DROP TABLE dbo.subscription;
---DROP TABLE dbo.measurement;
---DROP TABLE dbo.sensor;
---DROP TABLE dbo.station;
---DROP TABLE dbo.channel;
---DROP TABLE dbo.subscriber;
---DROP TABLE dbo.type;
---DROP TABLE dbo.location;
+DROP TABLE dbo.sensor_group;
+DROP TABLE dbo.user_permission;
+DROP TABLE dbo.subscription;
+DROP TABLE dbo.measurement;
+DROP TABLE dbo.sensor;
+DROP TABLE dbo.station;
+DROP TABLE dbo.channel;
+DROP TABLE dbo.subscriber;
+DROP TABLE dbo.type;
+DROP TABLE dbo.location;
+GO
 
 CREATE TABLE dbo.location (
     location_ID int IDENTITY(1,1),
