@@ -13,14 +13,14 @@ GO
 INSERT INTO dbo.[type] (name, [description],unit_long,unit_short) VALUES ('Luftdruck','Typ fuer alle Luftdrucksensoren','Hektopascal', 'hPa');
 GO
 --Create Sensoren (2 Temperatursensoren)
-INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,2,'Luftfeuchtigkeit draussen', 100,0,100);
-INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,2,'Luftfeuchtigkeit drinnen', 100,0,100);
+INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,2,'Luftfeuchtigkeit draussen', 10,0,100);
+INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,2,'Luftfeuchtigkeit drinnen', 10,0,100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,3,'Luftdruck absolut', 250,77,1100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,1,'Temperatur draussen', 4,-25,45);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,1,'Temperatur drinnen', 7,0,35);
 GO
-INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,2,'Luftfeuchtigkeit draussen', 100,0,100);
-INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,2,'Luftfeuchtigkeit drinnen', 100,0,100);
+INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,2,'Luftfeuchtigkeit draussen', 10,0,100);
+INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,2,'Luftfeuchtigkeit drinnen', 10,0,100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,3,'Luftdruck absolut', 250,77,1100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,1,'Temperatur draussen', 4,-25,45);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (2,1,'Temperatur drinnen', 7,0,35);
