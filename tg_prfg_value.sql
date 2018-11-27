@@ -1,24 +1,40 @@
 --Performance?
 CREATE TRIGGER dbo.measurmentValidation_i
 ON dbo.measurement
-INSTEAD OF insert
+FOR INSERT
 AS
 BEGIN
 	SET NOCOUNT ON;
-    DECLARE @sensor int = (select sensor_id from inserted);
-    DECLARE @lastvalue float = (select top 1 value_orig from dbo.measurement where sensor_id = @sensor AND invalid is null ORDER BY measure_time DESC);
-    DECLARE @value float = (select top 1 value_orig from inserted);
-    DECLARE @corr_value float = (select top 1 value_corrected from inserted);
-    DECLARE @maxchange float = (select max_difference from dbo.sensor where sensor_id = @sensor);
-    DECLARE @upper_bound float = (select upper_bound from dbo.sensor where sensor_id = @sensor);
-    DECLARE @lower_bound float = (select lower_bound from dbo.sensor where sensor_id = @sensor);
+    DECLARE @sensor int;
+    DECLARE @lastvalue float;
+    DECLARE @lasttimestamp datetimeoffset;
+    DECLARE @value float;
+    DECLARE @corr_value float;
+    DECLARE @maxchange float;
+    DECLARE @upper_bound float;
+    DECLARE @lower_bound float;
+    DECLARE @newtimestamp DATETIMEOFFSET;
+    SELECT TOP 1 @sensor = sensor_id, @value = value_orig, @corr_value = value_corrected, @newtimestamp = measure_time FROM inserted; 
+    SELECT @maxchange=max_difference, @upper_bound=upper_bound, @lower_bound=lower_bound from dbo.sensor where sensor_id = @sensor;
 
+    SELECT TOP 1 @lastvalue=A.value_orig, @lasttimestamp=A.measure_time 
+    FROM dbo.measurement A 
+    WHERE A.measure_time != @newtimestamp AND A.invalid IS NULL AND A.sensor_ID = @sensor 
+    ORDER BY A.measure_time DESC;
 
-    IF (ABS(@lastvalue-@value)<=@maxchange AND @value <= @upper_bound AND @value >= @lower_bound)
+IF NOT @value BETWEEN @lower_bound AND @upper_bound
     BEGIN
-        INSERT INTO dbo.measurement (sensor_ID,value_orig,value_corrected) VALUES (@sensor,@value,@corr_value);
+        UPDATE dbo.measurement SET invalid = 1 WHERE sensor_ID = @sensor and measure_time = @newtimestamp;
     END
     ELSE
-        INSERT INTO dbo.measurement (sensor_ID,value_orig,value_corrected,invalid) VALUES (@sensor,@value,@corr_value,1);
+    BEGIN
+    IF @lasttimestamp IS NOT NULL AND DATEDIFF(minute,@lasttimestamp,@newtimestamp) <= 180
+    BEGIN
+        IF (ABS(@lastvalue-@value)>=@maxchange)
+        BEGIN
+            UPDATE dbo.measurement SET invalid = 1 WHERE sensor_ID = @sensor and measure_time = @newtimestamp;
+        END
+    END
+END
 END
 GO
