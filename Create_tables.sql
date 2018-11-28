@@ -67,7 +67,7 @@ CREATE TABLE dbo.measurement (
     sensor_ID INT NOT NULL,
     measure_time DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
     value_orig FLOAT NOT NULL,
-    value_corrected FLOAT NOT NULL,
+    value_corrected FLOAT,
     invalid bit,
     CONSTRAINT PK_sensor_time PRIMARY KEY (sensor_ID,measure_time),
     CONSTRAINT FK_measurement_sensor FOREIGN KEY (sensor_ID) REFERENCES dbo.sensor(sensor_ID) 
