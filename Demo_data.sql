@@ -13,7 +13,7 @@ GO
 INSERT INTO dbo.[type] (name, [description],unit_long,unit_short) VALUES ('Luftdruck','Typ fuer alle Luftdrucksensoren','Hektopascal', 'hPa');
 GO
 --Create Sensoren (2 Temperatursensoren)
-INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,2,'Luftfeuchtigkeit draussen', 10,0,100);
+INSERT INTO dbo.sensor (station_ID,type_ID,name,correction_function,max_difference,lower_bound,upper_bound) VALUES (1,2,'x+0.1','Luftfeuchtigkeit draussen', 10,0,100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,2,'Luftfeuchtigkeit drinnen', 10,0,100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,3,'Luftdruck absolut', 250,77,1100);
 INSERT INTO dbo.sensor (station_ID,type_ID,name,max_difference,lower_bound,upper_bound) VALUES (1,1,'Temperatur draussen', 4,-25,45);
