@@ -57,19 +57,23 @@ GO
 --Subscribe die Sigismund zum Channel 1 (Alle Temperaturen)
 INSERT INTO dbo.subscription (subscriber_ID,channel_ID) VALUES (1,1)
 GO
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 1, measure_time, value_orig, value_orig FROM dbo.WS2301_humidity_ext;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 2, measure_time, value_orig, value_orig FROM dbo.WS2301_humidity_int;
+-- Measurement Tabelle wird ueber Insert_real_measurements.sql befuellt.
+
+
+
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 1, measure_time, value_orig, value_orig FROM dbo.WS2301_humidity_ext;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 2, measure_time, value_orig, value_orig FROM dbo.WS2301_humidity_int;
 -- Fehler im Datenexport: Werte sind doppelt vorhanden, daher DISTINCT um die PK Constraints einzuhalten
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT DISTINCT 3, measure_time, value_orig, value_orig FROM dbo.ws2301_pabs;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 4, measure_time, value_orig, value_orig FROM dbo.ws2301_temp_ext;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 5, measure_time, value_orig, value_orig FROM dbo.WS2301_temp_int;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 6, measure_time, value_orig, value_orig AS value_corrected FROM dbo.WS2302_humidity_ext;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT DISTINCT 3, measure_time, value_orig, value_orig FROM dbo.ws2301_pabs;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 4, measure_time, value_orig, value_orig FROM dbo.ws2301_temp_ext;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 5, measure_time, value_orig, value_orig FROM dbo.WS2301_temp_int;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 6, measure_time, value_orig, value_orig AS value_corrected FROM dbo.WS2302_humidity_ext;
 -- Fehler im Datenexport: Spalten sind falsch benannt, daher andere Spaltennamen damit der Insert funktioniert
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 7, column1, column2, column2 FROM dbo.WS2302_humidity_int;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 8, measure_time, value_orig, value_orig FROM dbo.ws2302_pabs;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 9, measure_time, value_orig, value_orig FROM dbo.ws2302_temp_ext;
-INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 10, measure_time, value_orig, value_orig FROM dbo.WS2302_temp_int;
-GO
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 7, column1, column2, column2 FROM dbo.WS2302_humidity_int;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 8, measure_time, value_orig, value_orig FROM dbo.ws2302_pabs;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 9, measure_time, value_orig, value_orig FROM dbo.ws2302_temp_ext;
+--INSERT INTO dbo.measurement (sensor_ID,measure_time,value_orig,value_corrected) SELECT 10, measure_time, value_orig, value_orig FROM dbo.WS2302_temp_int;
+--GO
 
 --Selects zum testen
 --SELECT * FROM dbo.[location];
