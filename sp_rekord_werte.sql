@@ -30,20 +30,32 @@ FROM dbo.user_permission
 -- Sensor muss gültig sein, sonst Fehler
 
 --Ergebnisrückgabe mittels SELECT --> einfach für Frontend
--- datum als String übergeben, da sonst ein falsches datum nicht überprueft werden kann, weil datumsuepruefung auf selben Level wie Try und Catch ist!
+
 --Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
 ALTER PROCEDURE dbo.sp_rekord_werte
     @subscriber_id INT,
-    @sensor_id INT,
-    @von_datum char(8),
-    @bis_datum char(8),
+    @sensor_id INT ,
+    @von_datum varchar,
+    @bis_datum VARCHAR,
     @separate_messwerte BIT
 AS
 BEGIN
 
     SET NOCOUNT ON;
+
+    IF TRY_CONVERT(DATE,@von_datum) IS NULL
+    BEGIN
+    SELECT 50001 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
+    RETURN
+    END
+    ELSE IF TRY_CONVERT(DATE,@bis_datum) IS NULL
+    BEGIN
+    SELECT 50002 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung;   
+    RETURN
+    END
     
+
     IF (SELECT COUNT(*) 
         FROM dbo.user_permission  
         WHERE @subscriber_id = subscriber_ID) = 0 --check if subscriber has permition to subscribe a sensor
@@ -67,20 +79,10 @@ BEGIN
          SELECT 50004 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor:', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
         RETURN
     END 
-   
+    
     
     BEGIN TRY
-        IF TRY_CONVERT(DATE,@von_datum) IS NULL
-        BEGIN
-        SELECT 50001 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
-        RETURN
-        END
-        ELSE IF TRY_CONVERT(DATE,@bis_datum) IS NULL
-        BEGIN
-        SELECT 50002 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
-        RETURN
-        END
-        ELSE
+        
 
         BEGIN
             SELECT *
@@ -92,19 +94,18 @@ BEGIN
        
     END TRY
     BEGIN CATCH
-         SELECT ERROR_NUMBER() AS Fehlernummer, ERROR_MESSAGE() AS Fehlermeldung; -- default error
+        SELECT ERROR_NUMBER() AS Fehlernummer, ERROR_MESSAGE() AS Fehlermeldung; -- default error
     END CATCH
+
+
     
 END
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 1 ,@von_datum = '2018-1-20',@bis_datum = '2018-1-12',@separate_messwerte= 1
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 1 ,@von_datum = '2018-12-01',@bis_datum = '2018-1-1',@separate_messwerte= 1
 
-SELECT TRY_CONVERT([date], '12/32/2010') AS Result;  
 
-SELECT COUNT(*) FROM dbo.user_permission sub WHERE 1 = sub.subscriber_ID
-
-SELECT GETDATE() as sss
 
 SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND (GETDATE() BETWEEN per.valid_from AND per.valid_to OR per.valid_to IS NULL)-- OR (per.valid_from >= GETDATE() AND per.valid_to IS NULL)
 
+SELECT TRY_CONVERT([date], '12/31/2010') AS Result;  
 SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND per.valid_to IS NULL
