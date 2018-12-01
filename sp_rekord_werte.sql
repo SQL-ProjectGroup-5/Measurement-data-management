@@ -30,6 +30,7 @@ FROM dbo.user_permission
 -- Sensor muss gültig sein, sonst Fehler
 
 --Ergebnisrückgabe mittels SELECT --> einfach für Frontend
+<<<<<<< HEAD
 
 --Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
@@ -39,6 +40,14 @@ ALTER PROCEDURE dbo.sp_rekord_werte
     @von_datum varchar,
     @bis_datum VARCHAR,
     @separate_messwerte BIT
+=======
+GO
+ALTER PROCEDURE dbo.sp_rekord_werte
+    @sensor_id INT = NULL,
+    @von_datum char(8) = NULL,
+    @bis_datum char(8) = NULL,
+    @separate_messwerte BIT = NULL
+>>>>>>> parent of d55c943... add error hanling
 AS
 BEGIN
 
@@ -55,6 +64,7 @@ BEGIN
     RETURN
     END
     
+<<<<<<< HEAD
 
     IF (SELECT COUNT(*) 
         FROM dbo.user_permission  
@@ -83,6 +93,21 @@ BEGIN
     
     BEGIN TRY
         
+=======
+    
+    BEGIN TRY
+        IF TRY_CONVERT(DATE,@von_datum) IS NULL
+        BEGIN
+        SELECT 'von Datum falsch' AS Result;   
+        RETURN
+        END
+        ELSE IF TRY_CONVERT(DATE,@bis_datum) IS NULL
+        BEGIN
+        SELECT 'bis Datum falsch' AS Result;   
+        RETURN
+        END
+        ELSE
+>>>>>>> parent of d55c943... add error hanling
 
         BEGIN
             SELECT *
@@ -94,6 +119,7 @@ BEGIN
        
     END TRY
     BEGIN CATCH
+<<<<<<< HEAD
         SELECT ERROR_NUMBER() AS Fehlernummer, ERROR_MESSAGE() AS Fehlermeldung; -- default error
     END CATCH
 
@@ -104,8 +130,26 @@ END
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 1 ,@von_datum = '2018-12-01',@bis_datum = '2018-1-1',@separate_messwerte= 1
 
 
+=======
+        PRINT 'jajaj'
+    END CATCH
 
-SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND (GETDATE() BETWEEN per.valid_from AND per.valid_to OR per.valid_to IS NULL)-- OR (per.valid_from >= GETDATE() AND per.valid_to IS NULL)
+    IF MONTH(@von_datum)>12
+    BEGIN
+        SELECT *
+        FROM dbo.user_permission
 
+    END
+
+    
+END
+>>>>>>> parent of d55c943... add error hanling
+
+EXEC dbo.sp_rekord_werte 1,'2018-1-20','2018-122-21',1
+
+<<<<<<< HEAD
 SELECT TRY_CONVERT([date], '12/31/2010') AS Result;  
 SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND per.valid_to IS NULL
+=======
+SELECT TRY_CONVERT([date], '12/31/2010') AS Result;  
+>>>>>>> parent of d55c943... add error hanling
