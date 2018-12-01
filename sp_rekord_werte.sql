@@ -22,7 +22,7 @@ SELECT *
 FROM dbo.subscription
 SELECT *
 FROM dbo.user_permission
-
+SET DATEFORMAT ymd; --day month year
 --Ideen für Error-Handling
 -- Subscriber der nicht die Berechtigung eines Sensors beitzt, bzw ihn nicht subscript bekommt Fehler
 -- Datum wurde im falschen Format übergeben: yyyy-mm-dd
@@ -36,58 +36,75 @@ GO
 ALTER PROCEDURE dbo.sp_rekord_werte
     @subscriber_id INT,
     @sensor_id INT,
-    @von_datum char(8),
-    @bis_datum char(8),
+    @von_datum char(40),
+    @bis_datum char(40),
     @separate_messwerte BIT
 AS
 BEGIN
 
     SET NOCOUNT ON;
     
+
     IF (SELECT COUNT(*) 
-        FROM dbo.user_permission  
-        WHERE @subscriber_id = subscriber_ID) = 0 --check if subscriber has permition to subscribe a sensor
+        FROM dbo.sensor  
+        WHERE @sensor_id = sensor_ID) = 0 --check if sensor exists!
     BEGIN
-        SELECT 50003 AS Fehlernummer, CONCAT('Subscriber hat keine Zugriffsrechte auf Sensor :',CONVERT(INT,@sensor_id)) AS Fehlermeldung; 
+        SELECT 50006 AS Fehlernummer, CONCAT('Sensor mit ID ',@sensor_id,' nicht vorhanden!') AS Fehlermeldung; 
         RETURN
     END
     ELSE IF (SELECT COUNT(*) 
+            FROM dbo.user_permission  
+            WHERE @subscriber_id = subscriber_ID AND @sensor_id=sensor_ID) = 0 --check if subscriber has permition to subscribe a sensor
+            BEGIN
+                SELECT 50003 AS Fehlernummer, CONCAT('Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id) AS Fehlermeldung; 
+                RETURN
+            END
+    ELSE IF (SELECT COUNT(*) 
             FROM dbo.user_permission 
-            WHERE 1 = subscriber_ID AND (GETDATE() BETWEEN valid_from AND valid_to OR valid_to IS NULL))=0--CHECK if permition is still valid
+            WHERE @subscriber_id = subscriber_ID AND (GETDATE() BETWEEN valid_from AND valid_to OR valid_to IS NULL))=0--CHECK if permition is still valid
     BEGIN
-        SELECT 50004 AS Fehlernummer,CONCAT('Subscriber Zugriffsrecht abgelaufen fuer Sensor :', CONVERT(INT,@sensor_id)) AS Fehlermeldung; 
+        SELECT 50004 AS Fehlernummer,CONCAT('Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id) AS Fehlermeldung; 
         RETURN
     END
-
-    IF ( SELECT COUNT(*)
-            FROM dbo.sensor sen
-            INNER  JOIN dbo.measurement meas ON meas.sensor_ID = sen.sensor_ID
-            WHERE (measure_time BETWEEN @von_datum AND @bis_datum) AND sen.sensor_ID = @sensor_id) = 0
-    BEGIN
-         SELECT 50004 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor:', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
-        RETURN
-    END 
-   
-    
     BEGIN TRY
+        --check if data format and input is incorrect:
+        IF @von_datum>@bis_datum
+        BEGIN
+            SELECT 50001 AS Fehlernummer, 'von-Datum groesser als ist-Datum' AS Fehlermeldung; 
+            RETURN
+        END
         IF TRY_CONVERT(DATE,@von_datum) IS NULL
         BEGIN
-        SELECT 50001 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
-        RETURN
+            SELECT 50001 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
+            RETURN
         END
         ELSE IF TRY_CONVERT(DATE,@bis_datum) IS NULL
-        BEGIN
-        SELECT 50002 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
+            BEGIN
+            SELECT 50002 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
         RETURN
         END
-        ELSE
 
+        IF ( SELECT COUNT(*) --check if values in period of time exist
+            FROM dbo.measurement
+            WHERE (((measure_time BETWEEN @von_datum AND @bis_datum) OR (@von_datum = @bis_datum AND DATEDIFF(Day,@von_datum,measure_time) =1)) AND sensor_ID = @sensor_id))=0 --also check if von_dat = bis_dat
+            BEGIN
+                SELECT 50004 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor: ', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
+                RETURN
+            END 
+
+        ELSE
         BEGIN
-            SELECT *
-            FROM dbo.sensor sen
-            INNER  JOIN dbo.measurement meas ON meas.sensor_ID = sen.sensor_ID
-            WHERE (measure_time BETWEEN @von_datum AND @bis_datum) AND sen.sensor_ID = @sensor_id
-            ORDER BY measure_time 
+            IF @separate_messwerte = 1 AND @von_datum != @bis_datum --separate values are only possible if the date 1 doesn't match date 2
+            BEGIN
+                SELECT 'To DO Calc Routine' AS Result
+            END
+            ELSE
+            BEGIN
+                SELECT MAX(value_corrected) AS max, MIN(value_corrected) AS min
+                FROM dbo.measurement
+                WHERE (((measure_time BETWEEN @von_datum AND @bis_datum) OR (@von_datum = @bis_datum AND DATEDIFF(Day,@von_datum,measure_time) =1)) AND sensor_ID = @sensor_id)
+            END
+           
         END
        
     END TRY
@@ -97,7 +114,7 @@ BEGIN
     
 END
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 1 ,@von_datum = '2018-1-12',@bis_datum = '2018-1-12',@separate_messwerte= 1
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-20 00:00:00 +01:00',@bis_datum = '2018-11-21 00:00:00 +01:00',@separate_messwerte= 0
 
 SELECT TRY_CONVERT([date], '12/32/2010') AS Result;  
 
@@ -108,3 +125,19 @@ SELECT GETDATE() as sss
 SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND (GETDATE() BETWEEN per.valid_from AND per.valid_to OR per.valid_to IS NULL)-- OR (per.valid_from >= GETDATE() AND per.valid_to IS NULL)
 
 SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND per.valid_to IS NULL
+
+
+SELECT COUNT(*)
+            FROM dbo.sensor sen
+            INNER  JOIN dbo.measurement meas ON meas.sensor_ID = sen.sensor_ID
+            WHERE (measure_time BETWEEN '2018-11-01' AND '2018-12-02') AND sen.sensor_ID = 4
+
+SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00') ORDER BY measure_time
+
+SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND DATEDIFF(Day,'2018-11-13 00:00:00 +01:00',measure_time) =1) ORDER BY measure_time
+
+SELECT * FROM dbo.measurement WHERE(sensor_ID = 4)  ORDER BY value_corrected
+
+ SELECT MAX(value_corrected) AS max, MIN(value_corrected) AS min
+                FROM dbo.measurement
+                WHERE ((('2018-11-01 00:00:00 +01:00' = '2018-11-01 00:00:00 +01:00' AND DATEDIFF(Day,'2018-11-17 00:00:00 +01:00',measure_time) =1)) AND sensor_ID = 4)
