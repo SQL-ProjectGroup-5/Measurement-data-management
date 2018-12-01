@@ -97,8 +97,9 @@ BEGIN
             IF @separate_messwerte = 1 AND @von_datum != @bis_datum --separate values are only possible if the date 1 doesn't match date 2
             BEGIN
                 SELECT 'To DO Calc Routine' AS Result
+
             END
-            ELSE --return min, max, average value over a period of time
+            ELSE --return min, max value over a period of time
             BEGIN
                 
                 SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
@@ -118,9 +119,9 @@ BEGIN
     
 END
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-20 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 0
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2017-11-20 00:00:00 +01:00',@bis_datum = '2019-11-20 23:59:00 +01:00',@separate_messwerte= 0
 
-SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2018-11-20 23:59:00 +01:00'
+SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2019-11-20 23:59:00 +01:00'
 
 SELECT TRY_CONVERT([date], '12/32/2010') AS Result;  
 
