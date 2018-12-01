@@ -86,7 +86,7 @@ BEGIN
 
         IF ( SELECT COUNT(*) --check if values in period of time exist
             FROM dbo.measurement
-            WHERE (((measure_time BETWEEN @von_datum AND @bis_datum) OR (@von_datum = @bis_datum AND DATEDIFF(Day,@von_datum,measure_time) =1)) AND sensor_ID = @sensor_id))=0 --also check if von_dat = bis_dat
+            WHERE ((measure_time BETWEEN @von_datum AND @bis_datum) AND sensor_ID = @sensor_id AND @von_datum!=@bis_datum))=0 --also check if von_dat = bis_dat
             BEGIN
                 SELECT 50004 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor: ', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
                 RETURN
@@ -98,11 +98,15 @@ BEGIN
             BEGIN
                 SELECT 'To DO Calc Routine' AS Result
             END
-            ELSE
+            ELSE --return min, max, average value over a period of time
             BEGIN
-                SELECT MAX(value_corrected) AS max, MIN(value_corrected) AS min
-                FROM dbo.measurement
-                WHERE (((measure_time BETWEEN @von_datum AND @bis_datum) OR (@von_datum = @bis_datum AND DATEDIFF(Day,@von_datum,measure_time) =1)) AND sensor_ID = @sensor_id)
+                
+                SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
+                value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN @von_datum AND @bis_datum AND sensor_ID = @sensor_id))
+                UNION
+                SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
+                value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN @von_datum AND @bis_datum AND sensor_ID = @sensor_id)) 
+
             END
            
         END
@@ -114,7 +118,9 @@ BEGIN
     
 END
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-20 00:00:00 +01:00',@bis_datum = '2018-11-21 00:00:00 +01:00',@separate_messwerte= 0
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-20 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 0
+
+SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2018-11-20 23:59:00 +01:00'
 
 SELECT TRY_CONVERT([date], '12/32/2010') AS Result;  
 
@@ -134,10 +140,19 @@ SELECT COUNT(*)
 
 SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00') ORDER BY measure_time
 
-SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND DATEDIFF(Day,'2018-11-13 00:00:00 +01:00',measure_time) =1) ORDER BY measure_time
+SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND  measure_time BETWEEN '2018-11-13 ' AND '2018-11-13 ') ORDER BY measure_time
 
 SELECT * FROM dbo.measurement WHERE(sensor_ID = 4)  ORDER BY value_corrected
 
  SELECT MAX(value_corrected) AS max, MIN(value_corrected) AS min
                 FROM dbo.measurement
                 WHERE ((('2018-11-01 00:00:00 +01:00' = '2018-11-01 00:00:00 +01:00' AND DATEDIFF(Day,'2018-11-17 00:00:00 +01:00',measure_time) =1)) AND sensor_ID = 4)
+
+
+DECLARE @datetime2 datetime2 = '2007-01-01 13:10:10.1111111';  
+SELECT '1 millisecond', DATEADD(MINUTE,1,@datetime2),DATEADD(MINUTE,1,@datetime2);
+
+
+SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00' AND sensor_ID = 4))
+UNION
+SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00' AND sensor_ID = 4)) 
