@@ -44,6 +44,7 @@ BEGIN
 
     SET NOCOUNT ON;
     DECLARE @countDays INT;
+    DECLARE @staticCountDays INT;
 
     IF (SELECT COUNT(*) 
         FROM dbo.sensor  
@@ -73,12 +74,12 @@ BEGIN
             SELECT 50001 AS Fehlernummer, 'von-Datum groesser als ist-Datum' AS Fehlermeldung; 
             RETURN
         END
-        IF TRY_CONVERT(DATE,@von_datum) IS NULL
+        IF TRY_CONVERT(DATETIME2,@von_datum) IS NULL
         BEGIN
             SELECT 50001 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
             RETURN
         END
-        ELSE IF TRY_CONVERT(DATE,@bis_datum) IS NULL
+        ELSE IF TRY_CONVERT(DATETIME2,@bis_datum) IS NULL
             BEGIN
             SELECT 50002 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
         RETURN
@@ -97,7 +98,8 @@ BEGIN
             IF @separate_messwerte = 1
             BEGIN
                 SET @countDays = DATEDIFF(Day, @von_datum, @bis_datum)
-                CREATE TABLE #tempValues  
+                SET @staticCountDays = @countDays
+                CREATE TABLE #tempValues --creates a temporary table  
                 (  
                     nr  INT IDENTITY(1,1),
                     typ char(10),  
@@ -108,10 +110,16 @@ BEGIN
 
                 WHILE @countDays >0
                 BEGIN
-                    INSERT INTO #tempValues(typ,messwert,datum)
-                    VALUES('min',21.22,'2018-11-11');
+                    --INSERT INTO #tempValues(typ,messwert,datum)
+                    --VALUES('min',21.22,'2018-11-11');
+                    
+                    INSERT INTO #tempValues (typ,messwert,datum)
+                    SELECT  TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
+                            value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE 
+                            (measure_time BETWEEN @von_datum AND DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@von_datum)) AND sensor_ID = @sensor_id))
+                
+                    PRINT DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@von_datum))
                     SET @countDays -= 1;
-
                 END
                 
                 SELECT * FROM #tempValues
@@ -121,10 +129,10 @@ BEGIN
             BEGIN
                 
                 SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN @von_datum AND @bis_datum AND sensor_ID = @sensor_id))
+                value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum ))
                 UNION
                 SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN @von_datum AND @bis_datum AND sensor_ID = @sensor_id)) 
+                value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum)) 
 
             END
            
@@ -137,7 +145,7 @@ BEGIN
     
 END
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-20 00:00:00 +01:00',@bis_datum = '2018-11-22 23:59:00 +01:00',@separate_messwerte= 1
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-02 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 0
 
 SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2019-11-20 23:59:00 +01:00'
 
