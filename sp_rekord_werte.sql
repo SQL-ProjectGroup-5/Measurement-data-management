@@ -43,7 +43,7 @@ AS
 BEGIN
 
     SET NOCOUNT ON;
-    
+    DECLARE @countDays INT;
 
     IF (SELECT COUNT(*) 
         FROM dbo.sensor  
@@ -94,9 +94,27 @@ BEGIN
 
         ELSE
         BEGIN
-            IF @separate_messwerte = 1 AND @von_datum != @bis_datum --separate values are only possible if the date 1 doesn't match date 2
+            IF @separate_messwerte = 1
             BEGIN
-                SELECT 'To DO Calc Routine' AS Result
+                SET @countDays = DATEDIFF(Day, @von_datum, @bis_datum)
+                CREATE TABLE #tempValues  
+                (  
+                    nr  INT IDENTITY(1,1),
+                    typ char(10),  
+                    messwert float,
+                    datum datetime  
+                    CONSTRAINT PK_nr PRIMARY KEY (nr)
+                )  
+
+                WHILE @countDays >0
+                BEGIN
+                    INSERT INTO #tempValues(typ,messwert,datum)
+                    VALUES('min',21.22,'2018-11-11');
+                    SET @countDays -= 1;
+
+                END
+                
+                SELECT * FROM #tempValues
 
             END
             ELSE --return min, max value over a period of time
@@ -119,7 +137,7 @@ BEGIN
     
 END
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2017-11-20 00:00:00 +01:00',@bis_datum = '2019-11-20 23:59:00 +01:00',@separate_messwerte= 0
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-20 00:00:00 +01:00',@bis_datum = '2018-11-22 23:59:00 +01:00',@separate_messwerte= 1
 
 SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2019-11-20 23:59:00 +01:00'
 
