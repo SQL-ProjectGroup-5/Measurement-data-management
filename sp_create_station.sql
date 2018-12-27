@@ -6,6 +6,7 @@
 CREATE PROCEDURE dbo.sp_create_station @name VARCHAR(255), @station_desc VARCHAR(255)=NULL, @location INT = NULL, @location_name VARCHAR(32) = NULL, @lat FLOAT = NULL, @long FLOAT = NULL
 AS
 BEGIN
+	SET NOCOUNT ON;
 	BEGIN TRY
 		IF @location IS NULL AND @lat IS NOT NULL AND @long IS NOT NULL
 		BEGIN
