@@ -1,5 +1,5 @@
 --Performance?
-CREATE TRIGGER dbo.measurmentValidation_i
+CREATE TRIGGER dbo.tg_validate_measurement_i
 ON dbo.measurement
 FOR INSERT
 AS
