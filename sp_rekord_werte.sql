@@ -101,24 +101,20 @@ BEGIN
         BEGIN
             IF @separate_messwerte = 1
             BEGIN
-                PRINT('Shouldnt be here!')
                 SET @countDays = DATEDIFF(Day, @von_datum, @bis_datum)
                 SET @staticCountDays = @countDays
 
                 --get days out of range: then transform starting date starts at: 00:00 and ends at 23:59
                 --SET @start_day = CONVERT(Date@von_datum)
                 
-                SET @buffer_datetime2 = CONVERT(DATETIME2,CONVERT(DATE,@von_datum)) --time set 00:00
-                PRINT(@buffer_datetime2)
-                SET @von_datum = @buffer_datetime2
-                SET @buffer_date = CONVERT(DATE,@bis_datum)
-                SET @buffer_datetime2 = DATEADD(MINUTE,59,DATEADD(HOUR,23,CONVERT(DATETIME2,@buffer_date))) --time set to 23:59
-                PRINT(@buffer_datetime2)
-                SET @bis_datum = @buffer_datetime2
+                SET @buffer_datetime2 = CONVERT(DATETIME2,CONVERT(DATE,@von_datum))AT TIME ZONE 'Central European Standard Time' --time set 00:00
+                --PRINT(@buffer_datetime2)
+                SET @von_datum = @buffer_datetime2 AT TIME ZONE 'Central European Standard Time'
+                
+                SET @bis_datum = DATEADD(MINUTE,59,DATEADD(HOUR,23,(CONVERT(DATETIME2,@von_datum))AT TIME ZONE 'Central European Standard Time')) --time set to 23:59
+                --PRINT(@buffer_datetime2)
                 --not using split String functions, because delimeter might change!!
                 --built in convert functions are more agile.
-
-
 
                 CREATE TABLE #tempValues --creates a temporary table  
                 (  
@@ -133,16 +129,28 @@ BEGIN
                 BEGIN
                     --INSERT INTO #tempValues(typ,messwert,datum)
                     --VALUES('min',21.22,'2018-11-11');
-                    PRINT(@countDays)
-                    PRINT(@staticCountDays)
+                    
+
+                    SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement 
+                    WHERE value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement 
+                                            WHERE sensor_ID=4 AND measure_time BETWEEN @von_datum AND @bis_datum)
+
+
                     INSERT INTO #tempValues (typ,messwert,datum)
                     SELECT  TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
                             value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE 
-                            (measure_time BETWEEN @von_datum AND DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@von_datum)) AND sensor_ID = @sensor_id))
+                            (measure_time BETWEEN @von_datum AND @bis_datum) AND sensor_ID = @sensor_id)
 
-                    SET @von_datum = DATEADD(HOUR,23,CONVERT(DATETIME2,@von_datum))
-                    PRINT @von_datum
-                    PRINT DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@von_datum))
+                    PRINT(@von_datum)
+                    PRINT(@bis_datum)
+
+                    --add 1 day 
+                    SET @von_datum = DATEADD(DAY,1,(CONVERT(DATETIME2,@von_datum))AT TIME ZONE 'Central European Standard Time')
+                    SET @bis_datum = DATEADD(DAY,1,(CONVERT(DATETIME2,@bis_datum))AT TIME ZONE 'Central European Standard Time')
+
+                   
+                    --PRINT @von_datum
+                    --PRINT DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@von_datum))
                     SET @countDays -= 1;
                 END
                 
@@ -169,6 +177,9 @@ BEGIN
     END CATCH
     
 END
+
+
+SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00')
 
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-02 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 1
 
