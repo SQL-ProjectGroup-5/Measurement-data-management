@@ -22,7 +22,18 @@ SELECT *
 FROM dbo.subscription
 SELECT *
 FROM dbo.user_permission
-SET DATEFORMAT ymd; --day month year
+SET DATEFORMAT ymd; 
+
+--Error number:
+--50001: 'Sensor mit ID ',@sensor_id,' nicht vorhanden!'
+--50002: 'Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id
+--50003: 'Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id
+--50004: 'von-Datum groesser als ist-Datum'
+--50005: 'von Datum falsch'
+--50006: 'bis Datum falsch'
+
+
+--day month year
 --Ideen für Error-Handling
 -- Subscriber der nicht die Berechtigung eines Sensors beitzt, bzw ihn nicht subscript bekommt Fehler
 -- Datum wurde im falschen Format übergeben: yyyy-mm-dd
@@ -54,38 +65,38 @@ BEGIN
         FROM dbo.sensor  
         WHERE @sensor_id = sensor_ID) = 0 --check if sensor exists!
     BEGIN
-        SELECT 50006 AS Fehlernummer, CONCAT('Sensor mit ID ',@sensor_id,' nicht vorhanden!') AS Fehlermeldung; 
+        SELECT 50001 AS Fehlernummer, CONCAT('Sensor mit ID ',@sensor_id,' nicht vorhanden!') AS Fehlermeldung; 
         RETURN
     END
     ELSE IF (SELECT COUNT(*) 
             FROM dbo.user_permission  
             WHERE @subscriber_id = subscriber_ID AND @sensor_id=sensor_ID) = 0 --check if subscriber has permition to subscribe a sensor
             BEGIN
-                SELECT 50003 AS Fehlernummer, CONCAT('Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id) AS Fehlermeldung; 
+                SELECT 50002 AS Fehlernummer, CONCAT('Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id) AS Fehlermeldung; 
                 RETURN
             END
     ELSE IF (SELECT COUNT(*) 
             FROM dbo.user_permission 
             WHERE @subscriber_id = subscriber_ID AND (GETDATE() BETWEEN valid_from AND valid_to OR valid_to IS NULL))=0--CHECK if permition is still valid
     BEGIN
-        SELECT 50004 AS Fehlernummer,CONCAT('Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id) AS Fehlermeldung; 
+        SELECT 50003 AS Fehlernummer,CONCAT('Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id) AS Fehlermeldung; 
         RETURN
     END
     BEGIN TRY
         --check if data format and input is incorrect:
         IF @von_datum>@bis_datum
         BEGIN
-            SELECT 50001 AS Fehlernummer, 'von-Datum groesser als ist-Datum' AS Fehlermeldung; 
+            SELECT 50004 AS Fehlernummer, 'von-Datum groesser als ist-Datum' AS Fehlermeldung; 
             RETURN
         END
         IF TRY_CONVERT(DATETIME2,@von_datum) IS NULL
         BEGIN
-            SELECT 50001 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
+            SELECT 50005 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
             RETURN
         END
         ELSE IF TRY_CONVERT(DATETIME2,@bis_datum) IS NULL
             BEGIN
-            SELECT 50002 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
+            SELECT 50006 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
         RETURN
         END
 
@@ -93,7 +104,7 @@ BEGIN
             FROM dbo.measurement
             WHERE ((measure_time BETWEEN @von_datum AND @bis_datum) AND sensor_ID = @sensor_id AND @von_datum!=@bis_datum))=0 --also check if von_dat = bis_dat
             BEGIN
-                SELECT 50004 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor: ', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
+                SELECT 50007 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor: ', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
                 RETURN
             END 
 
@@ -123,13 +134,16 @@ BEGIN
                     messwert float,
                     datum datetime  
                     CONSTRAINT PK_nr PRIMARY KEY (nr)
-                )  
+                )
+    
 
                 WHILE @countDays >0
                 BEGIN
                     --INSERT INTO #tempValues(typ,messwert,datum)
                     --VALUES('min',21.22,'2018-11-11');
-                    
+
+                    --new version: select all measurements in time range and buffer in table
+                 
                     INSERT INTO #tempValues (typ,messwert,datum)
                     SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
                     value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum ))
@@ -138,10 +152,6 @@ BEGIN
                     SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
                     value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum)) 
                     AND (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum )
-
-                    --SELECT  TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                     --       value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE 
-                     --       (measure_time BETWEEN @von_datum AND @bis_datum) AND sensor_ID = @sensor_id)
 
                     PRINT(@von_datum)
                     PRINT(@bis_datum)
@@ -188,6 +198,9 @@ WHERE value_corrected = (SELECT MIN(value_corrected)
                         WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00') AND sensor_ID=4 AND measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00'
 
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-02 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 1
+
+SELECT 'min' AS TYPE, min(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00')
+
 
 SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2019-11-20 23:59:00 +01:00'
 
