@@ -1,14 +1,28 @@
-CREATE TRIGGER dbo.tg_channel_permission
-ON dbi.
+--subscriber is only able to create channel if at least ONE sensor is readable!
+ALTER TRIGGER dbo.tg_channel_permission
+ON dbo.subscription
 AFTER INSERT, UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    --update trigger was ist relevant? nicht relevant wenn lieferant sich ändert!! 
-    --darum mit IF UPDATE() überprüfen
-
-    SELECT * FROM inserted
+    --check if the subscriber has the permition to read at least ONE Sensor:
+    
+    IF(SELECT COUNT(*) FROM 
+    (SELECT up.subscriber_ID, up.sensor_ID, up.valid_from, up.valid_to
+    FROM dbo.user_permission up
+    INNER JOIN inserted ins ON up.subscriber_ID = ins.subscriber_ID) AS ss) > 0
+    BEGIN
+        SELECT 'bz' AS ss 
+    END
+    ELSE
+    BEGIN
+        ROLLBACK TRANSACTION;
+        THROW 50015, 'Subscriber hat keine Zugriffsrechte auf Sensor', 1;
+        RETURN
+    END
+    
+    
     --IF UPDATE(ekpreis)--UPDATE sagt nur aus,ob spalte geändert wird. 
     --UPDATE liefert bei INSERT TRUE!!
     --BEGIN
@@ -24,3 +38,4 @@ BEGIN
      --   FROM inserted
     --END
 END
+
