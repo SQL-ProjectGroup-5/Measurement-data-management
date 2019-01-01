@@ -57,9 +57,6 @@ BEGIN
     DECLARE @countDays INT;
     DECLARE @staticCountDays INT;
 
-    --new 29.12
-    DECLARE @buffer_date DATE;
-    DECLARE @buffer_datetime2 DATETIME2;
 
     IF (SELECT COUNT(*) 
         FROM dbo.sensor  
@@ -118,9 +115,8 @@ BEGIN
                 --get days out of range: then transform starting date starts at: 00:00 and ends at 23:59
                 --SET @start_day = CONVERT(Date@von_datum)
                 
-                SET @buffer_datetime2 = CONVERT(DATETIME2,CONVERT(DATE,@von_datum))AT TIME ZONE 'Central European Standard Time' --time set 00:00
-                --PRINT(@buffer_datetime2)
-                SET @von_datum = @buffer_datetime2 AT TIME ZONE 'Central European Standard Time'
+               
+                SET @von_datum = CONVERT(DATETIME2,CONVERT(DATE,@von_datum))AT TIME ZONE 'Central European Standard Time'
                 
                 SET @bis_datum = DATEADD(MINUTE,59,DATEADD(HOUR,23,(CONVERT(DATETIME2,@von_datum))AT TIME ZONE 'Central European Standard Time')) --time set to 23:59
                 --PRINT(@buffer_datetime2)
