@@ -27,6 +27,8 @@ BEGIN
     
     SET NOCOUNT ON;
 
+    DECLARE @temp_channel_id INT
+
     --check if channel id IS NULL, if so, check if @channel_name and @channel_description are not null!
     IF @channel_id IS NULL AND (@channel_description IS NULL OR @channel_name IS NULL)
     BEGIN 
@@ -39,6 +41,13 @@ BEGIN
             SELECT 50012 AS Fehlernummer, 'Zeitspanne zwischen from-date und to-date darf nicht groesser als 1 Jahr sein!' AS Fehlermeldung; 
             RETURN
         END
+
+    --check if subscriber id is in db
+    IF (SELECT COUNT(*) FROM dbo.subscriber WHERE (subscriber_ID = @subscriber_id)) = 0
+    BEGIN
+         SELECT 50012 AS Fehlernummer, 'Subscriber ID wurde nicht gefunden' AS Fehlermeldung; 
+        RETURN
+    END
     --check if data format and input is incorrect:
     IF TRY_CONVERT(DATETIME2,@valid_from_date) IS NULL
     BEGIN
@@ -74,9 +83,16 @@ BEGIN
         BEGIN
             INSERT INTO dbo.channel(channel.name,channel.[description]) --DML trigger will start here due to the INSERT statement
             VALUES(@channel_name,@channel_description)
-
+            SET @temp_channel_id = (SELECT TOP 1 channel_ID FROM dbo.channel ORDER BY channel_ID DESC) --get latest ID number 
+            PRINT @temp_channel_id
+            
+            INSERT INTO dbo.subscription(subscription.subscriber_ID, subscription.channel_ID, subscription.valid_from, subscription.valid_to)
+            VALUES(@subscriber_id, 
+                @temp_channel_id,
+                @valid_from_date,
+                @valid_to_date)
             --testing purpose:
-            SELECT * FROM dbo.channel
+            SELECT * FROM dbo.subscription
 
         END
     END TRY
@@ -87,5 +103,9 @@ BEGIN
 END
 
 BEGIN TRANSACTION
-EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2019-12-15 23:59:00 +01:00', @channel_description = 'a new one', @channel_name='bla bla'
+EXEC dbo.sp_prj_subscribe @subscriber_id = 3, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', @channel_description = 'a new one', @channel_name='bla bla'
 ROLLBACK 
+
+SELECT * FROM dbo.user_permission
+SELECT * FROM dbo.subscriber
+
