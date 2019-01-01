@@ -192,10 +192,6 @@ BEGIN
 END
 
 
-SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement 
-WHERE value_corrected = (SELECT MIN(value_corrected) 
-                        FROM dbo.measurement 
-                        WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00') AND sensor_ID=4 AND measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00'
 
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-02 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 1
 
