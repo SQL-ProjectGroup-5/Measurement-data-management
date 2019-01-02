@@ -111,6 +111,7 @@ CREATE TABLE dbo.logging(
 	involved_procedure varchar(255),
 	involved_trigger varchar(255),
     reported_timestamp DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	resulting_code int NOT NULL,
 	resulting_message varchar(255) NOT NULL
 );
 CREATE INDEX ix_measurementPK ON dbo.measurement (measure_time DESC,sensor_id) -- Index um den INSERT Trigger zur Pruefung zu beschleunigen. Benoetigt weitere Tests!
