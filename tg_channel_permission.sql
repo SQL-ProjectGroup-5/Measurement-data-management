@@ -4,7 +4,6 @@ ON dbo.subscription
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    SET NOCOUNT ON;
 
     --check if the subscriber has the permition to read at least ONE Sensor:
     -- if no sensor readable, creating an channel won't be adviceable
