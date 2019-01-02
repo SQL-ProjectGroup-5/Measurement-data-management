@@ -8,6 +8,7 @@ DROP TABLE dbo.channel;
 DROP TABLE dbo.subscriber;
 DROP TABLE dbo.type;
 DROP TABLE dbo.location;
+DROP TABLE dbo.logging;
 GO
 
 CREATE TABLE dbo.location (
