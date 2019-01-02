@@ -17,5 +17,9 @@ BEGIN
 		EXECUTE sp_executesql @function, @parm, @value_corrected OUT
 		UPDATE dbo.measurement SET value_corrected = @value_corrected WHERE sensor_ID = @sensor AND measure_time = @newtimestamp;
     END
+	ELSE IF ((SELECT correction_function FROM dbo.sensor WHERE sensor_ID = @sensor) IS NULL AND @value_corrected_from_sensor IS NULL)
+	BEGIN
+		UPDATE dbo.measurement SET value_corrected = @value_orig WHERE sensor_ID = @sensor AND measure_time = @newtimestamp;
+	END
 END
 GO
