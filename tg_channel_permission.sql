@@ -18,10 +18,6 @@ BEGIN
         THROW 50015, 'Subscriber hat keine Zugriffsrechte auf Sensor', 1;
         RETURN
     END
-
-
-
-    
     
     --IF UPDATE(ekpreis)--UPDATE sagt nur aus,ob spalte geändert wird. 
     --UPDATE liefert bei INSERT TRUE!!
@@ -43,4 +39,5 @@ END
     SELECT sg.channel_ID ,up.subscriber_ID, up.sensor_ID, up.valid_from, up.valid_to
     FROM dbo.user_permission up
     INNER JOIN dbo.sensor_group sg ON up.sensor_ID = sg.sensor_ID
-    WHERE(up.sensor_ID=1)
+    INNER JOIN dbo.subscription sp ON sp.subscriber_ID = 1
+
