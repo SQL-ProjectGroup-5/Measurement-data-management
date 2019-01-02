@@ -43,7 +43,8 @@ CREATE TABLE dbo.station (
     name varchar(32) NOT NULL,
     description varchar(255),
     CONSTRAINT PK_station_ID PRIMARY KEY (station_ID),
-    CONSTRAINT FK_locationStation_ID FOREIGN KEY (location_ID) REFERENCES dbo.location(location_ID)
+    CONSTRAINT FK_locationStation_ID FOREIGN KEY (location_ID) REFERENCES dbo.location(location_ID),
+	CONSTRAINT UC_station_name UNIQUE (name)
 );
 CREATE TABLE dbo.sensor (
     sensor_ID int IDENTITY(1,1),
@@ -103,4 +104,14 @@ CREATE TABLE dbo.sensor_group(
     CONSTRAINT PK_channel_sensor PRIMARY KEY (channel_ID, sensor_ID)
 );
 -- Ende der identifizierenden Beziehungen
+
+CREATE TABLE dbo.logging(
+    causing_user varchar(255) NOT NULL,
+    involved_table varchar(255),
+	involved_procedure varchar(255),
+	involved_trigger varchar(255),
+    reported_timestamp DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	resulting_code int NOT NULL,
+	resulting_message varchar(255) NOT NULL
+);
 CREATE INDEX ix_measurementPK ON dbo.measurement (measure_time DESC,sensor_id) -- Index um den INSERT Trigger zur Pruefung zu beschleunigen. Benoetigt weitere Tests!

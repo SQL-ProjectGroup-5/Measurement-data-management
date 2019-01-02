@@ -25,6 +25,7 @@ BEGIN
     IF NOT @value BETWEEN @lower_bound AND @upper_bound
     BEGIN
         UPDATE dbo.measurement SET invalid = 1 WHERE sensor_ID = @sensor and measure_time = @newtimestamp;
+		INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'tg_validate_measurement_i',50400,'Set invalid bit because measurement is out of bound');
     END
     ELSE
     BEGIN
@@ -33,6 +34,7 @@ BEGIN
             IF (ABS(@lastvalue-@value)>=@maxchange)
             BEGIN
                 UPDATE dbo.measurement SET invalid = 1 WHERE sensor_ID = @sensor and measure_time = @newtimestamp;
+				INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'tg_validate_measurement_i',50401,'Set invalid bit because max change within timeframe is exceeded');
             END
         END
     END
