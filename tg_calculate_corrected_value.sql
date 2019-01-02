@@ -1,4 +1,4 @@
-CREATE TRIGGER dbo.calculate_corrected_value_iu
+CREATE TRIGGER dbo.tg_calculate_corrected_value_i
 ON dbo.measurement
 AFTER INSERT
 AS
