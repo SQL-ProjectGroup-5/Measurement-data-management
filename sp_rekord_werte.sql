@@ -63,6 +63,7 @@ BEGIN
         WHERE @sensor_id = sensor_ID) = 0 --check if sensor exists!
     BEGIN
         SELECT 50001 AS ERRORNUMBER, CONCAT('Sensor with ID ',@sensor_id,' not availabe!') AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50001,CONCAT('Sensor with ID ',@sensor_id,' not availabe!')); 
         RETURN
     END
     ELSE IF (SELECT COUNT(*) 
@@ -70,6 +71,7 @@ BEGIN
             WHERE @subscriber_id = subscriber_ID AND @sensor_id=sensor_ID) = 0 --check if subscriber has permition to subscribe a sensor
             BEGIN
                 SELECT 50002 AS ERRORNUMBER, CONCAT('Subscriber has no permission on: ',@sensor_id) AS ERRORMESSAGE; 
+                INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50002,CONCAT('Subscriber has no permission on: ',@sensor_id)); 
                 RETURN
             END
     ELSE IF (SELECT COUNT(*) 
@@ -77,6 +79,7 @@ BEGIN
             WHERE @subscriber_id = subscriber_ID AND (GETDATE() BETWEEN valid_from AND valid_to OR valid_to IS NULL))=0--CHECK if permition is still valid
     BEGIN
         SELECT 50003 AS ERRORNUMBER,CONCAT('Subscriber permission expired for sensor: ', @sensor_id) AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50003,CONCAT('Subscriber permission expired for sensor: ', @sensor_id)); 
         RETURN
     END
     BEGIN TRY
@@ -84,16 +87,22 @@ BEGIN
         IF @von_datum>@bis_datum
         BEGIN
             SELECT 50004 AS ERRORNUMBER, 'from-date greater than to-Datum' AS ERRORMESSAGE; 
+            INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50004,'from-date greater than to-Datum'); 
+
             RETURN
         END
         IF TRY_CONVERT(DATETIME2,@von_datum) IS NULL
         BEGIN
-            SELECT 50005 AS ERRORNUMBER, 'from-date format wrong' AS ERRORMESSAGE; 
+            SELECT 50005 AS ERRORNUMBER, 'from-date format wrong' AS ERRORMESSAGE;
+            INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50005,'from-date format wrong'); 
+
             RETURN
         END
         ELSE IF TRY_CONVERT(DATETIME2,@bis_datum) IS NULL
             BEGIN
-            SELECT 50006 AS ERRORNUMBER, 'to-date format wrong' AS ERRORMESSAGE; 
+            SELECT 50006 AS ERRORNUMBER, 'to-date format wrong' AS ERRORMESSAGE;
+            INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50006, 'to-date format wrong'); 
+
         RETURN
         END
 
