@@ -43,7 +43,8 @@ CREATE TABLE dbo.station (
     name varchar(32) NOT NULL,
     description varchar(255),
     CONSTRAINT PK_station_ID PRIMARY KEY (station_ID),
-    CONSTRAINT FK_locationStation_ID FOREIGN KEY (location_ID) REFERENCES dbo.location(location_ID)
+    CONSTRAINT FK_locationStation_ID FOREIGN KEY (location_ID) REFERENCES dbo.location(location_ID),
+	CONSTRAINT UC_station_name UNIQUE (name)
 );
 CREATE TABLE dbo.sensor (
     sensor_ID int IDENTITY(1,1),
