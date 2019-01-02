@@ -32,7 +32,7 @@ BEGIN
     DECLARE @temp_channel_id INT
     DECLARE @count_ID_string INT --variable is needed for number of iterations in while loop
 
-    --check if channel id IS NOT NULL, if so, check if @channel_name is not null!
+    --check if channel id IS NULL and channel name IS NULL -> channel ID IS NULL Means new subscription, NOT IS NULL --> update subscription
     IF (@channel_id IS NULL) AND (@channel_name IS NULL)
     BEGIN 
         SELECT 50100 AS ERRORNUMBER, 'If no channel ID is used as a parameter, channel name can not be empty' AS ERRORMESSAGE; 
@@ -54,6 +54,27 @@ BEGIN
     
     IF @valid_to_date IS NULL
         SET @valid_to_date = TRY_CONVERT(DATETIME2,DATEADD(MONTH,12,GETDATE()))AT TIME ZONE 'Central European Standard Time'
+
+
+     --check if data format and input is incorrect:
+    IF TRY_CONVERT(DATETIME2,@valid_from_date) IS NULL
+    BEGIN
+        SELECT 50104 AS ERRORNUMBER, 'wrong from-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50104,'wrong from-date format');
+        RETURN
+    END
+    ELSE IF TRY_CONVERT(DATETIME2,@valid_to_date) IS NULL
+        BEGIN
+        SELECT 50105 AS ERRORNUMBER, 'wrong to-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE;
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50105,'wrong from-date format'); 
+    RETURN
+    END
+    ELSE IF @valid_from_date>@valid_to_date
+    BEGIN
+        SELECT 50106 AS ERRORNUMBER, 'from-date greater than to-date' AS ERRORMESSAGE;
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50106,'from-date greater than to-date'); 
+        RETURN
+    END
 
     --check whether time difference between from- and to-date is greater 1 year
     IF DATEDIFF(MONTH,@valid_from_date,@valid_to_date) > 12
@@ -78,25 +99,6 @@ BEGIN
     --     RETURN
     -- END
     
-    --check if data format and input is incorrect:
-    IF TRY_CONVERT(DATETIME2,@valid_from_date) IS NULL
-    BEGIN
-        SELECT 50104 AS ERRORNUMBER, 'wrong from-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE; 
-        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50104,'wrong from-date format');
-        RETURN
-    END
-    ELSE IF TRY_CONVERT(DATETIME2,@valid_to_date) IS NULL
-        BEGIN
-        SELECT 50105 AS ERRORNUMBER, 'wrong to-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE;
-        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50105,'wrong from-date format'); 
-    RETURN
-    END
-    ELSE IF @valid_from_date>@valid_to_date
-    BEGIN
-        SELECT 50106 AS ERRORNUMBER, 'from-date greater than to-date' AS ERRORMESSAGE;
-        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50106,'from-date greater than to-date'); 
-        RETURN
-    END
 
     --check if subscriber has a corresponding CHANNEL ID, if not could be a new channel or updating failed!
     IF (SELECT COUNT(*) 
@@ -140,7 +142,6 @@ BEGIN
             --insert new rows in sensor_group because a new channel is added with multiple senors (while loop needed)
             SET @count_ID_string = (SELECT COUNT(*) FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter))
             
-            SELECT * FROM dbo.sensor_group
             --insert into temporary table
             INSERT INTO #tempSensorIDs
             SELECT value FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter)
@@ -197,9 +198,6 @@ SELECT * FROM dbo.channel
 SELECT * FROM dbo.subscription
 SELECT * FROM dbo.sensor
 
-PRINT @@TRANCOUNT
---not working
-exec dbo.sp_prj_subscribe @subscriber_id = 2, @sensor_ID_string = '1,2', @sensor_ID_string_delimeter = ',', @valid_from_date = '2018-11-20 10:00:00 +01:00', @valid_to_date = '2019-2-15 23:59:00 +01:00', @channel_id = 1;
 
 --later maybe, turn valid_from and valid_to into optional parameters....
 PRINT CONVERT(DATETIME2,GETDATE())AT TIME ZONE 'Central European Standard Time'
