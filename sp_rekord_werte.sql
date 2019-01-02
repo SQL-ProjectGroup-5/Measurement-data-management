@@ -24,6 +24,14 @@ SELECT *
 FROM dbo.user_permission
 SET DATEFORMAT ymd; 
 
+UPDATE dbo.user_permission 
+SET valid_to = '2018-12-12 00:00:00 +01:00' 
+WHERE (subscriber_id = 1 AND sensor_ID = 4)
+
+
+SELECT COUNT(*) 
+            FROM dbo.user_permission 
+            WHERE  subscriber_ID = 1 AND (GETDATE() NOT BETWEEN valid_from AND valid_to) AND sensor_ID =5
 --Error number:
 --50001: 'Sensor mit ID ',@sensor_id,' nicht vorhanden!'
 --50002: 'Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id
@@ -44,12 +52,12 @@ SET DATEFORMAT ymd;
 -- datum als String übergeben, da sonst ein falsches datum nicht überprueft werden kann, weil datumsuepruefung auf selben Level wie Try und Catch ist!
 --Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
-CREATE PROCEDURE dbo.sp_rekord_werte
+ALTER PROCEDURE dbo.sp_rekord_werte
     @subscriber_id INT,
     @sensor_id INT,
-    @von_datum char(40),
-    @bis_datum char(40),
-    @separate_messwerte BIT
+    @from_date char(40),
+    @to_date char(40),
+    @daily_evaluation BIT
 AS
 BEGIN
 
@@ -76,7 +84,7 @@ BEGIN
             END
     ELSE IF (SELECT COUNT(*) 
             FROM dbo.user_permission 
-            WHERE @subscriber_id = subscriber_ID AND (GETDATE() BETWEEN valid_from AND valid_to OR valid_to IS NULL))=0--CHECK if permition is still valid
+            WHERE @subscriber_id = subscriber_ID AND (GETDATE() NOT BETWEEN valid_from AND valid_to) AND sensor_ID=@sensor_id)>0--CHECK if permition is still valid
     BEGIN
         SELECT 50003 AS ERRORNUMBER,CONCAT('Subscriber permission expired for sensor: ', @sensor_id) AS ERRORMESSAGE; 
         INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50003,CONCAT('Subscriber permission expired for sensor: ', @sensor_id)); 
@@ -84,50 +92,57 @@ BEGIN
     END
     BEGIN TRY
         --check if data format and input is incorrect:
-        IF @von_datum>@bis_datum
+        IF @from_date>@to_date
         BEGIN
-            SELECT 50004 AS ERRORNUMBER, 'from-date greater than to-Datum' AS ERRORMESSAGE; 
+            SELECT 50004 AS ERRORNUMBER, 'from-date greater than to-date' AS ERRORMESSAGE; 
             INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50004,'from-date greater than to-Datum'); 
 
             RETURN
         END
-        IF TRY_CONVERT(DATETIME2,@von_datum) IS NULL
+        IF TRY_CONVERT(DATETIME2,@from_date) IS NULL
         BEGIN
             SELECT 50005 AS ERRORNUMBER, 'from-date format wrong' AS ERRORMESSAGE;
             INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50005,'from-date format wrong'); 
 
             RETURN
         END
-        ELSE IF TRY_CONVERT(DATETIME2,@bis_datum) IS NULL
+        ELSE IF TRY_CONVERT(DATETIME2,@to_date) IS NULL
             BEGIN
             SELECT 50006 AS ERRORNUMBER, 'to-date format wrong' AS ERRORMESSAGE;
             INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50006, 'to-date format wrong'); 
-
-        RETURN
+            RETURN
         END
 
         IF ( SELECT COUNT(*) --check if values in period of time exist
             FROM dbo.measurement
-            WHERE ((measure_time BETWEEN @von_datum AND @bis_datum) AND sensor_ID = @sensor_id AND @von_datum!=@bis_datum))=0 --also check if von_dat = bis_dat
+            WHERE ((measure_time BETWEEN @from_date AND @to_date) AND sensor_ID = @sensor_id AND @from_date!=@to_date))=0 --also check if von_dat = bis_dat
             BEGIN
-                SELECT 50007 AS ERRORNUMBER,CONCAT('No measurements available for sensor: ', @sensor_id,' between ',@von_datum, ' and ',@bis_datum) AS ERRORMESSAGE; 
+                SELECT 50007 AS ERRORNUMBER,CONCAT('No measurements available for sensor: ', @sensor_id,' between ',@from_date, ' and ',@to_date) AS ERRORMESSAGE; 
+                INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50007, CONCAT('No measurements available for sensor: ', @sensor_id)); 
                 RETURN
             END 
 
         ELSE
         BEGIN
-            IF @separate_messwerte = 1
+            IF @daily_evaluation = 1
             BEGIN
-                SET @countDays = DATEDIFF(Day, @von_datum, @bis_datum)
+                SET @countDays = DATEDIFF(Day, @from_date, @to_date)
                 SET @staticCountDays = @countDays
 
+                IF @countDays > 365
+                BEGIN
+                    SELECT 50008 AS ERRORNUMBER, 'Date difference between from-date and to-date less than 365 days' AS ERRORMESSAGE; 
+                    INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_rekord_werte',50008, 'Date difference > 365'); 
+                    RETURN
+                END
+
                 --get days out of range: then transform starting date starts at: 00:00 and ends at 23:59
-                --SET @start_day = CONVERT(Date@von_datum)
+                --SET @start_day = CONVERT(Date@from_date)
                 
                
-                SET @von_datum = CONVERT(DATETIME2,CONVERT(DATE,@von_datum))AT TIME ZONE 'Central European Standard Time'
+                SET @from_date = CONVERT(DATETIME2,CONVERT(DATE,@from_date))AT TIME ZONE 'Central European Standard Time'
                 
-                SET @bis_datum = DATEADD(MINUTE,59,DATEADD(HOUR,23,(CONVERT(DATETIME2,@von_datum))AT TIME ZONE 'Central European Standard Time')) --time set to 23:59
+                SET @to_date = DATEADD(MINUTE,59,DATEADD(HOUR,23,(CONVERT(DATETIME2,@from_date))AT TIME ZONE 'Central European Standard Time')) --time set to 23:59
                 --PRINT(@buffer_datetime2)
                 --not using split String functions, because delimeter might change!!
                 --built in convert functions are more agile.
@@ -151,23 +166,23 @@ BEGIN
                  
                     INSERT INTO #tempValues (typ,messwert,datum)
                     SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                    value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum ))
-                    AND (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum )
+                    value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date ))
+                    AND (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date )
                     UNION
                     SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                    value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum)) 
-                    AND (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum )
+                    value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date)) 
+                    AND (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date )
 
-                    PRINT(@von_datum)
-                    PRINT(@bis_datum)
+                    PRINT(@from_date)
+                    PRINT(@to_date)
 
                     --add 1 day 
-                    SET @von_datum = DATEADD(DAY,1,(CONVERT(DATETIME2,@von_datum))AT TIME ZONE 'Central European Standard Time')
-                    SET @bis_datum = DATEADD(DAY,1,(CONVERT(DATETIME2,@bis_datum))AT TIME ZONE 'Central European Standard Time')
+                    SET @from_date = DATEADD(DAY,1,(CONVERT(DATETIME2,@from_date))AT TIME ZONE 'Central European Standard Time')
+                    SET @to_date = DATEADD(DAY,1,(CONVERT(DATETIME2,@to_date))AT TIME ZONE 'Central European Standard Time')
 
                    
-                    --PRINT @von_datum
-                    --PRINT DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@von_datum))
+                    --PRINT @from_date
+                    --PRINT DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@from_date))
                     SET @countDays -= 1;
                 END
                 
@@ -179,12 +194,12 @@ BEGIN
                 
                 
                 SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum ))
-                AND (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum )
+                value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date ))
+                AND (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date )
                 UNION
                 SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
-                value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum)) 
-                AND (sensor_ID = @sensor_id AND measure_time BETWEEN @von_datum AND @bis_datum )
+                value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date)) 
+                AND (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date )
             END
            
         END
@@ -198,7 +213,11 @@ END
 
 
 
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@von_datum = '2018-11-02 00:00:00 +01:00',@bis_datum = '2018-11-20 23:59:00 +01:00',@separate_messwerte= 1
+---------------------------------------
+--TESTING:
+
+EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@from_date = '2018-11-02 00:00:00 +01:00',@to_date = '2018-11-20 23:59:00 +01:00',@daily_evaluation= 1
+
 
 SELECT 'min' AS TYPE, min(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00')
 
