@@ -14,7 +14,7 @@ SELECT * FROM dbo.channel
 
 GO
 
-CREATE PROCEDURE dbo.sp_prj_subscribe
+ALTER PROCEDURE dbo.sp_prj_subscribe
     @subscriber_id INT,
     @channel_id INT = NULL,
     @valid_from_date char(40),
@@ -55,13 +55,13 @@ BEGIN
         INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50102,'Subscriber ID not available');
         RETURN
     END
-    --check if subscriber is linked to a channel, has to be checked otherwise an error will occur
-    IF (SELECT COUNT(*) FROM dbo.subscription WHERE (subscriber_ID = @subscriber_id AND channel_ID = @channel_ID)) = 0
-    BEGIN
-        SELECT 50103 AS ERRORNUMBER, 'Subscriber ID is not linked to any channel!' AS ERRORMESSAGE; 
-        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50103,'Subscriber ID is not linked to any channel!');
-        RETURN
-    END
+    -- --check if subscriber is linked to a channel, has to be checked otherwise an error will occur
+    -- IF (SELECT COUNT(*) FROM dbo.subscription WHERE (subscriber_ID = @subscriber_id AND channel_ID = @channel_ID)) = 0
+    -- BEGIN
+    --     SELECT 50103 AS ERRORNUMBER, 'Subscriber ID is not linked to any channel!' AS ERRORMESSAGE; 
+    --     INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50103,'Subscriber ID is not linked to any channel!');
+    --     RETURN
+    -- END
     
     --check if data format and input is incorrect:
     IF TRY_CONVERT(DATETIME2,@valid_from_date) IS NULL
@@ -155,7 +155,7 @@ BEGIN
 END
 
 --add a new channel with sensors
-EXEC dbo.sp_prj_subscribe @subscriber_id = 2, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
                           @channel_description = 'a new one', @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
 
 --update channel (update valid from and valid to date)
