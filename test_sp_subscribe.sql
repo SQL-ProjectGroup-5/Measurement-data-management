@@ -8,7 +8,7 @@ EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:
 EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
 
 --add a new channel with sensors with default date and no channel description
-EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_name='bla bla',@sensor_ID_string='4;5;99',@sensor_ID_string_delimeter=';'
+EXEC dbo.sp_prj_subscribe @subscriber_id = 2, @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
 
 
 
@@ -56,3 +56,7 @@ exec dbo.sp_prj_subscribe @subscriber_id = 1, @sensor_ID_string = '1,2', @sensor
 
 --add channel with sensor ID that does not exist: ERRORNUMBER 50108
 EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_name='bla bla',@sensor_ID_string='4;5;99',@sensor_ID_string_delimeter=';'
+
+--ERRORNUMBER 50300 (Trigger)
+EXEC dbo.sp_prj_subscribe @subscriber_id = 2, @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
+
