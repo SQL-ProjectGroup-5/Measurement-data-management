@@ -67,6 +67,12 @@ BEGIN
         SELECT 50015 AS Fehlernummer, 'von-Datum groesser bis-Datum' AS Fehlermeldung; 
         RETURN
     END
+
+     CREATE TABLE #tempSensorIDs --creates a temporary table  
+                (  
+                    nr INT IDENTITY(1,1),
+                    id INT
+                )
     
     BEGIN TRY
     BEGIN TRANSACTION
@@ -85,28 +91,37 @@ BEGIN
         --trigger tg_channel will start to check whether the user is allowed to subscribe a channel
         ELSE
         BEGIN
-            INSERT INTO dbo.channel(channel.name,channel.[description]) --DML trigger will start here due to the INSERT statement
+            INSERT INTO dbo.channel(channel.name,channel.[description]) 
             VALUES(@channel_name,@channel_description)
             SET @temp_channel_id = (SELECT TOP 1 channel_ID FROM dbo.channel ORDER BY channel_ID DESC) --get latest ID number 
-            PRINT @temp_channel_id
             
-            INSERT INTO dbo.subscription(subscription.subscriber_ID, subscription.channel_ID, subscription.valid_from, subscription.valid_to)
+            INSERT INTO dbo.subscription(subscription.subscriber_ID, subscription.channel_ID, subscription.valid_from, subscription.valid_to) --DML trigger will start here due to the INSERT statement
             VALUES(@subscriber_id, 
                 @temp_channel_id,
                 @valid_from_date,
                 @valid_to_date)
 
+            --insert new rows in sensor_group because a new channel is added with multiple senors (while loop needed)
             SET @count_ID_string = (SELECT COUNT(*) FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter))
             
-            --insert new rows in sensor_group because a new channel is added with multiple senors (while loop needed)
+            SELECT * FROM dbo.sensor_group
+            --insert into temporary table
+            INSERT INTO #tempSensorIDs
+            SELECT value FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter)
+            
+            WHILE(@count_ID_string>0)
+            BEGIN
 
-            INSERT INTO dbo.sensor_group(channel_ID,sensor_ID,valid_from,valid_to)
-            VALUES(@temp_channel_id,
-                    1,
-                    @valid_from_date,
-                    @valid_to_date)
-            
-            
+                INSERT INTO dbo.sensor_group(channel_ID,sensor_ID,valid_from,valid_to)
+                VALUES(@temp_channel_id,
+                      (SELECT TOP 1 id FROM #tempSensorIDs),
+                      @valid_from_date,
+                      @valid_to_date)
+
+                DELETE FROM #tempSensorIDs WHERE (id=( SELECT TOP 1 id FROM #tempSensorIDs))
+                SET @count_ID_string-=1
+            END
+            SELECT * FROM dbo.sensor_group
             
             --testing purpose:
             SELECT * FROM dbo.subscription
@@ -119,10 +134,8 @@ BEGIN
 
 END
 
-BEGIN TRANSACTION
 EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
                           @channel_description = 'a new one', @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
-ROLLBACK 
 
 SELECT * FROM dbo.user_permission
 SELECT * FROM dbo.sensor_group
