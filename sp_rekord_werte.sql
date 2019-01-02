@@ -44,7 +44,7 @@ SET DATEFORMAT ymd;
 -- datum als String übergeben, da sonst ein falsches datum nicht überprueft werden kann, weil datumsuepruefung auf selben Level wie Try und Catch ist!
 --Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
-ALTER PROCEDURE dbo.sp_rekord_werte
+CREATE PROCEDURE dbo.sp_rekord_werte
     @subscriber_id INT,
     @sensor_id INT,
     @von_datum char(40),

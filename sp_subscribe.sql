@@ -14,7 +14,7 @@ SELECT * FROM dbo.channel
 
 GO
 
-ALTER PROCEDURE dbo.sp_prj_subscribe
+CREATE PROCEDURE dbo.sp_prj_subscribe
     @subscriber_id INT,
     @channel_id INT = NULL,
     @valid_from_date char(40),
