@@ -35,40 +35,41 @@ BEGIN
     --check if channel id IS NULL, if so, check if @channel_name and @channel_description are not null!
     IF @channel_id IS NULL AND (@channel_description IS NULL OR @channel_name IS NULL)
     BEGIN 
-        SELECT 50011 AS Fehlernummer, 'Wenn keine channel_id angegeben wird duerfen channel name und channel description nicht leer sein!' AS Fehlermeldung; 
+        SELECT 50100 AS ERRORNUMBER, 'If no channel ID is provided as a parameter, channel name and channel description can not be empty' AS ERRORMESSAGE; 
         RETURN
     END
     --check wether time difference between from- and to-date is greater 1 year
     IF DATEDIFF(MONTH,@valid_from_date,@valid_to_date) > 12
         BEGIN
-            SELECT 50012 AS Fehlernummer, 'Zeitspanne zwischen from-date und to-date darf nicht groesser als 1 Jahr sein!' AS Fehlermeldung; 
+            SELECT 50101 AS ERRORNUMBER, 'duration between from-date to to-date must not be greater than 1 year!' AS ERRORMESSAGE; 
             RETURN
         END
 
     --check if subscriber id is in db
     IF (SELECT COUNT(*) FROM dbo.subscriber WHERE (subscriber_ID = @subscriber_id)) = 0
     BEGIN
-         SELECT 50012 AS Fehlernummer, 'Subscriber ID wurde nicht gefunden' AS Fehlermeldung; 
+         SELECT 50102 AS ERRORNUMBER, 'Subscriber ID not available' AS ERRORMESSAGE; 
         RETURN
     END
     --check if data format and input is incorrect:
     IF TRY_CONVERT(DATETIME2,@valid_from_date) IS NULL
     BEGIN
-        SELECT 50013 AS Fehlernummer, 'von Datum falsch: Format: yyyy-MM-dd hh:mm:ss +01:00' AS Fehlermeldung; 
+        SELECT 50103 AS ERRORNUMBER, 'wrong from-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE; 
         RETURN
     END
     ELSE IF TRY_CONVERT(DATETIME2,@valid_to_date) IS NULL
         BEGIN
-        SELECT 50014 AS Fehlernummer, 'bis Datum falsch: Format: yyyy-MM-dd hh:mm:ss +01:00' AS Fehlermeldung; 
+        SELECT 50104 AS ERRORNUMBER, 'wrong to-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE; 
     RETURN
     END
     ELSE IF @valid_from_date>@valid_to_date
     BEGIN
-        SELECT 50015 AS Fehlernummer, 'von-Datum groesser bis-Datum' AS Fehlermeldung; 
+        SELECT 50105 AS ERRORNUMBER, 'from-date greater than to-date' AS ERRORMESSAGE; 
         RETURN
     END
 
-     CREATE TABLE #tempSensorIDs --creates a temporary table  
+    --temporary table to store string values from procedure parameter
+    CREATE TABLE #tempSensorIDs 
                 (  
                     nr INT IDENTITY(1,1),
                     id INT
@@ -95,12 +96,6 @@ BEGIN
             VALUES(@channel_name,@channel_description)
             SET @temp_channel_id = (SELECT TOP 1 channel_ID FROM dbo.channel ORDER BY channel_ID DESC) --get latest ID number 
             
-            INSERT INTO dbo.subscription(subscription.subscriber_ID, subscription.channel_ID, subscription.valid_from, subscription.valid_to) --DML trigger will start here due to the INSERT statement
-            VALUES(@subscriber_id, 
-                @temp_channel_id,
-                @valid_from_date,
-                @valid_to_date)
-
             --insert new rows in sensor_group because a new channel is added with multiple senors (while loop needed)
             SET @count_ID_string = (SELECT COUNT(*) FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter))
             
@@ -118,9 +113,17 @@ BEGIN
                       @valid_from_date,
                       @valid_to_date)
 
+                --each iteration delete first value
                 DELETE FROM #tempSensorIDs WHERE (id=( SELECT TOP 1 id FROM #tempSensorIDs))
                 SET @count_ID_string-=1
             END
+
+            INSERT INTO dbo.subscription(subscription.subscriber_ID, subscription.channel_ID, subscription.valid_from, subscription.valid_to) --DML trigger will start here due to the INSERT statement
+            VALUES(@subscriber_id, 
+                @temp_channel_id,
+                @valid_from_date,
+                @valid_to_date)
+
             SELECT * FROM dbo.sensor_group
             
             --testing purpose:
@@ -134,7 +137,7 @@ BEGIN
 
 END
 
-EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
+EXEC dbo.sp_prj_subscribe @subscriber_id = 2, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
                           @channel_description = 'a new one', @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
 
 SELECT * FROM dbo.user_permission
