@@ -62,38 +62,38 @@ BEGIN
         FROM dbo.sensor  
         WHERE @sensor_id = sensor_ID) = 0 --check if sensor exists!
     BEGIN
-        SELECT 50001 AS Fehlernummer, CONCAT('Sensor mit ID ',@sensor_id,' nicht vorhanden!') AS Fehlermeldung; 
+        SELECT 50001 AS ERRORNUMBER, CONCAT('Sensor with ID ',@sensor_id,' not availabe!') AS ERRORMESSAGE; 
         RETURN
     END
     ELSE IF (SELECT COUNT(*) 
             FROM dbo.user_permission  
             WHERE @subscriber_id = subscriber_ID AND @sensor_id=sensor_ID) = 0 --check if subscriber has permition to subscribe a sensor
             BEGIN
-                SELECT 50002 AS Fehlernummer, CONCAT('Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id) AS Fehlermeldung; 
+                SELECT 50002 AS ERRORNUMBER, CONCAT('Subscriber has no permission on: ',@sensor_id) AS ERRORMESSAGE; 
                 RETURN
             END
     ELSE IF (SELECT COUNT(*) 
             FROM dbo.user_permission 
             WHERE @subscriber_id = subscriber_ID AND (GETDATE() BETWEEN valid_from AND valid_to OR valid_to IS NULL))=0--CHECK if permition is still valid
     BEGIN
-        SELECT 50003 AS Fehlernummer,CONCAT('Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id) AS Fehlermeldung; 
+        SELECT 50003 AS ERRORNUMBER,CONCAT('Subscriber permission expired for sensor: ', @sensor_id) AS ERRORMESSAGE; 
         RETURN
     END
     BEGIN TRY
         --check if data format and input is incorrect:
         IF @von_datum>@bis_datum
         BEGIN
-            SELECT 50004 AS Fehlernummer, 'von-Datum groesser als ist-Datum' AS Fehlermeldung; 
+            SELECT 50004 AS ERRORNUMBER, 'from-date greater than to-Datum' AS ERRORMESSAGE; 
             RETURN
         END
         IF TRY_CONVERT(DATETIME2,@von_datum) IS NULL
         BEGIN
-            SELECT 50005 AS Fehlernummer, 'von Datum falsch' AS Fehlermeldung; 
+            SELECT 50005 AS ERRORNUMBER, 'from-date format wrong' AS ERRORMESSAGE; 
             RETURN
         END
         ELSE IF TRY_CONVERT(DATETIME2,@bis_datum) IS NULL
             BEGIN
-            SELECT 50006 AS Fehlernummer, 'bis Datum falsch' AS Fehlermeldung; 
+            SELECT 50006 AS ERRORNUMBER, 'to-date format wrong' AS ERRORMESSAGE; 
         RETURN
         END
 
@@ -101,7 +101,7 @@ BEGIN
             FROM dbo.measurement
             WHERE ((measure_time BETWEEN @von_datum AND @bis_datum) AND sensor_ID = @sensor_id AND @von_datum!=@bis_datum))=0 --also check if von_dat = bis_dat
             BEGIN
-                SELECT 50007 AS Fehlernummer,CONCAT('Keine Messwerte vorhanden fuer Sensor: ', @sensor_id,' zwischen ',@von_datum, ' und ',@bis_datum) AS Fehlermeldung; 
+                SELECT 50007 AS ERRORNUMBER,CONCAT('No measurements available for sensor: ', @sensor_id,' between ',@von_datum, ' and ',@bis_datum) AS ERRORMESSAGE; 
                 RETURN
             END 
 
