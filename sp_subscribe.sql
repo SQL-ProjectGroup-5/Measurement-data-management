@@ -36,25 +36,30 @@ BEGIN
     IF @channel_id IS NULL AND (@channel_description IS NULL OR @channel_name IS NULL)
     BEGIN 
         SELECT 50100 AS ERRORNUMBER, 'If no channel ID is provided as a parameter, channel name and channel description can not be empty' AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50100,'Empty channel ID');
+        
         RETURN
     END
     --check wether time difference between from- and to-date is greater 1 year
     IF DATEDIFF(MONTH,@valid_from_date,@valid_to_date) > 12
         BEGIN
             SELECT 50101 AS ERRORNUMBER, 'duration between from-date to to-date must not be greater than 1 year!' AS ERRORMESSAGE; 
+            INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50101,'duration between from-date to to-date greater than 1 year!');
             RETURN
         END
 
     --check if subscriber id is in db
     IF (SELECT COUNT(*) FROM dbo.subscriber WHERE (subscriber_ID = @subscriber_id)) = 0
     BEGIN
-         SELECT 50102 AS ERRORNUMBER, 'Subscriber ID not available' AS ERRORMESSAGE; 
+        SELECT 50102 AS ERRORNUMBER, 'Subscriber ID not available' AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50102,'Subscriber ID not available');
         RETURN
     END
     --check if subscriber is linked to a channel, has to be checked otherwise an error will occur
     IF (SELECT COUNT(*) FROM dbo.subscription WHERE (subscriber_ID = @subscriber_id AND channel_ID = @channel_ID)) = 0
     BEGIN
-         SELECT 50103 AS ERRORNUMBER, 'Subscriber ID is not linked to any channel!' AS ERRORMESSAGE; 
+        SELECT 50103 AS ERRORNUMBER, 'Subscriber ID is not linked to any channel!' AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50103,'Subscriber ID is not linked to any channel!');
         RETURN
     END
     
@@ -62,16 +67,19 @@ BEGIN
     IF TRY_CONVERT(DATETIME2,@valid_from_date) IS NULL
     BEGIN
         SELECT 50104 AS ERRORNUMBER, 'wrong from-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50104,'wrong from-date format');
         RETURN
     END
     ELSE IF TRY_CONVERT(DATETIME2,@valid_to_date) IS NULL
         BEGIN
-        SELECT 50105 AS ERRORNUMBER, 'wrong to-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE; 
+        SELECT 50105 AS ERRORNUMBER, 'wrong to-date format: yyyy-MM-dd hh:mm:ss +01:00' AS ERRORMESSAGE;
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50105,'wrong from-date format'); 
     RETURN
     END
     ELSE IF @valid_from_date>@valid_to_date
     BEGIN
-        SELECT 50106 AS ERRORNUMBER, 'from-date greater than to-date' AS ERRORMESSAGE; 
+        SELECT 50106 AS ERRORNUMBER, 'from-date greater than to-date' AS ERRORMESSAGE;
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50106,'from-date greater than to-date'); 
         RETURN
     END
 
@@ -141,6 +149,7 @@ BEGIN
     END TRY
     BEGIN CATCH
         SELECT  ERROR_NUMBER() AS Fehlernummer, ERROR_MESSAGE() AS Fehlermeldung;  -- default error
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',ERROR_NUMBER(), ERROR_MESSAGE()); 
     END CATCH
 
 END
