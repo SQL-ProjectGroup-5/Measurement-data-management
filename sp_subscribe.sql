@@ -20,7 +20,9 @@ ALTER PROCEDURE dbo.sp_prj_subscribe
     @valid_from_date char(40),
     @valid_to_date char(40),
     @channel_name varchar(32) = NULL,
-    @channel_description varchar(255) = NULL
+    @channel_description varchar(255) = NULL,
+    @sensor_ID_string varchar(255),
+    @sensor_ID_string_delimeter char(1)
 
 AS
 BEGIN
@@ -28,6 +30,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @temp_channel_id INT
+    DECLARE @count_ID_string INT --variable is needed for number of iterations in while loop
 
     --check if channel id IS NULL, if so, check if @channel_name and @channel_description are not null!
     IF @channel_id IS NULL AND (@channel_description IS NULL OR @channel_name IS NULL)
@@ -66,6 +69,7 @@ BEGIN
     END
     
     BEGIN TRY
+    BEGIN TRANSACTION
         -- check if channel_id for subscriber_id already exists, if so, update valid_to_date!
         IF (SELECT COUNT(*) 
             FROM dbo.subscription
@@ -91,21 +95,40 @@ BEGIN
                 @temp_channel_id,
                 @valid_from_date,
                 @valid_to_date)
+
+            SET @count_ID_string = (SELECT COUNT(*) FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter))
+            
+            --insert new rows in sensor_group because a new channel is added with multiple senors (while loop needed)
+
+            INSERT INTO dbo.sensor_group(channel_ID,sensor_ID,valid_from,valid_to)
+            VALUES(@temp_channel_id,
+                    1,
+                    @valid_from_date,
+                    @valid_to_date)
+            
+            
+            
             --testing purpose:
             SELECT * FROM dbo.subscription
-
+        COMMIT TRANSACTION
         END
     END TRY
     BEGIN CATCH
-        SELECT ERROR_NUMBER() AS Fehlernummer, ERROR_MESSAGE() AS Fehlermeldung; -- default error
+        SELECT  ERROR_NUMBER() AS Fehlernummer, ERROR_MESSAGE() AS Fehlermeldung;  -- default error
     END CATCH
 
 END
 
 BEGIN TRANSACTION
-EXEC dbo.sp_prj_subscribe @subscriber_id = 3, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', @channel_description = 'a new one', @channel_name='bla bla'
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
+                          @channel_description = 'a new one', @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
 ROLLBACK 
 
 SELECT * FROM dbo.user_permission
-SELECT * FROM dbo.subscriber
+SELECT * FROM dbo.sensor_group
 
+--later maybe, turn valid_from and valid_to into optional parameters....
+PRINT CONVERT(DATETIME2,GETDATE())AT TIME ZONE 'Central European Standard Time'
+
+DECLARE @list AS VARCHAR(233)
+SET @list = (SELECT value FROM STRING_SPLIT('Lorem ipsum dolor sit amet.', ';'))
