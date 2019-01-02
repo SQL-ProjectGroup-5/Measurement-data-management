@@ -7,20 +7,20 @@ BEGIN
     SET NOCOUNT ON;
 
     --check if the subscriber has the permition to read at least ONE Sensor:
+    -- if no sensor readable, creating an channel won't be adviceable
     
     IF(SELECT COUNT(*) FROM 
     (SELECT up.subscriber_ID, up.sensor_ID, up.valid_from, up.valid_to
     FROM dbo.user_permission up
-    INNER JOIN inserted ins ON up.subscriber_ID = ins.subscriber_ID) AS ss) > 0
-    BEGIN
-        SELECT 'bz' AS ss 
-    END
-    ELSE
+    INNER JOIN inserted ins ON up.subscriber_ID = ins.subscriber_ID) AS tb) = 0
     BEGIN
         ROLLBACK TRANSACTION;
         THROW 50015, 'Subscriber hat keine Zugriffsrechte auf Sensor', 1;
         RETURN
     END
+
+
+
     
     
     --IF UPDATE(ekpreis)--UPDATE sagt nur aus,ob spalte geändert wird. 
@@ -39,3 +39,8 @@ BEGIN
     --END
 END
 
+ 
+    SELECT sg.channel_ID ,up.subscriber_ID, up.sensor_ID, up.valid_from, up.valid_to
+    FROM dbo.user_permission up
+    INNER JOIN dbo.sensor_group sg ON up.sensor_ID = sg.sensor_ID
+    WHERE(up.sensor_ID=1)
