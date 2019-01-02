@@ -36,5 +36,23 @@ EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_name='bla bla',@sensor_ID
 --add a new channel with sensors with default date and no channel description, without sensor_ID_string_delimeter and sensor_ID_string
 EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_name='bla bla'
 
---update channel with channel id that does not match to the subscriber channel id: errornumber 50107
+--ERRORNUMBER 50100
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1
+--ERRORNUMBER 50101
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_id = 1,@valid_from_date = '2018-12-20 11:00:00 +01:00', @valid_to_date = '2020-12-15 23:59:00 +01:00'
+--ERRORNUMBER 50102
+EXEC dbo.sp_prj_subscribe @subscriber_id = 99, @channel_id = 1
+
+--ERRORNUMBER 50104
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_id = 1,@valid_from_date = '2018-14-20 11:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00'
+--ERRORNUMBER 50105
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_id = 1,@valid_from_date = '2018-10-20 11:00:00 +01:00', @valid_to_date = '2018-13-15 23:59:00 +01:00'
+
+--ERRORNUMBER 50106
+ EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_id = 1,@valid_from_date = '2018-12-20 11:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00'
+
+--update channel with channel id that does not match to the subscriber channel id: ERRORNUMBER 50107
 exec dbo.sp_prj_subscribe @subscriber_id = 1, @sensor_ID_string = '1,2', @sensor_ID_string_delimeter = ',', @valid_from_date = '2018-11-20 10:00:00 +01:00', @valid_to_date = '2019-2-15 23:59:00 +01:00', @channel_id = 33;
+
+--add channel with sensor ID that does not exist: ERRORNUMBER 50108
+EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @channel_name='bla bla',@sensor_ID_string='4;5;99',@sensor_ID_string_delimeter=';'
