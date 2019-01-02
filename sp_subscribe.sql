@@ -17,12 +17,12 @@ GO
 ALTER PROCEDURE dbo.sp_prj_subscribe
     @subscriber_id INT,
     @channel_id INT = NULL,
-    @valid_from_date char(40),
-    @valid_to_date char(40),
+    @valid_from_date char(40) = NULL,
+    @valid_to_date char(40) = NULL,
     @channel_name varchar(32) = NULL,
     @channel_description varchar(255) = NULL,
-    @sensor_ID_string varchar(255),
-    @sensor_ID_string_delimeter char(1)
+    @sensor_ID_string varchar(255) = NULL,
+    @sensor_ID_string_delimeter char(1) = NULL
 
 AS
 BEGIN
@@ -32,15 +32,30 @@ BEGIN
     DECLARE @temp_channel_id INT
     DECLARE @count_ID_string INT --variable is needed for number of iterations in while loop
 
-    --check if channel id IS NULL, if so, check if @channel_name and @channel_description are not null!
-    IF @channel_id IS NULL AND (@channel_description IS NULL OR @channel_name IS NULL)
+    --check if channel id IS NOT NULL, if so, check if @channel_name is not null!
+    IF (@channel_id IS NULL) AND (@channel_name IS NULL)
     BEGIN 
-        SELECT 50100 AS ERRORNUMBER, 'If no channel ID is provided as a parameter, channel name and channel description can not be empty' AS ERRORMESSAGE; 
+        SELECT 50100 AS ERRORNUMBER, 'If no channel ID is used as a parameter, channel name can not be empty' AS ERRORMESSAGE; 
         INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50100,'Empty channel ID');
-        
         RETURN
     END
-    --check wether time difference between from- and to-date is greater 1 year
+ 
+    --check if sensor_string or sensor id delimeter are empty. They can only be empty if the channel id is set
+    IF (@sensor_ID_string IS NULL OR @sensor_ID_string_delimeter IS NULL) AND @channel_id IS NULL
+    BEGIN
+        SELECT 50107 AS ERRORNUMBER, 'sensor_ID_string and sensor_ID_string_delimeter can not be empty!' AS ERRORMESSAGE; 
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50107,'sensor_ID_string and sensor_ID_string_delimeter are empty');
+        RETURN
+    END
+
+    --check if from_date or to_date is empty, if so write default date
+    IF @valid_from_date IS NULL
+        SET @valid_from_date = TRY_CONVERT(DATETIME2,GETDATE())AT TIME ZONE 'Central European Standard Time'
+    
+    IF @valid_to_date IS NULL
+        SET @valid_to_date = TRY_CONVERT(DATETIME2,DATEADD(MONTH,12,GETDATE()))AT TIME ZONE 'Central European Standard Time'
+
+    --check whether time difference between from- and to-date is greater 1 year
     IF DATEDIFF(MONTH,@valid_from_date,@valid_to_date) > 12
         BEGIN
             SELECT 50101 AS ERRORNUMBER, 'duration between from-date to to-date must not be greater than 1 year!' AS ERRORMESSAGE; 
@@ -83,6 +98,16 @@ BEGIN
         RETURN
     END
 
+    --check if subscriber has a corresponding CHANNEL ID, if not could be a new channel or updating failed!
+    IF (SELECT COUNT(*) 
+            FROM dbo.subscription
+            WHERE channel_id = @channel_id AND subscriber_ID = @subscriber_id) = 0 --no entry found --> new channel?
+        AND NOT @channel_id IS NULL
+    BEGIN
+        SELECT 50107 AS ERRORNUMBER, 'Subscriber has no corresponding CHANNEL_ID' AS ERRORMESSAGE;
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50107,'Subscriber has no corresponding CHANNEL_ID'); 
+        RETURN
+    END   
 
     --temporary table to store string values from procedure parameter
     CREATE TABLE #tempSensorIDs 
@@ -98,11 +123,11 @@ BEGIN
             FROM dbo.subscription
             WHERE channel_id = @channel_id AND subscriber_ID = @subscriber_id) > 0   
         BEGIN
-
+            PRINT 'in HERE'
             UPDATE dbo.subscription
             SET valid_from = @valid_from_date, valid_to = @valid_to_date
             WHERE(channel_ID = @channel_id AND subscriber_ID = @subscriber_id)
-
+            SELECT * FROM dbo.subscription
         END
         -- IF channel_id for subscriber_id does not exists try to insert new row into dbo.subsription, 
         --trigger tg_channel will start to check whether the user is allowed to subscribe a channel
@@ -119,10 +144,18 @@ BEGIN
             --insert into temporary table
             INSERT INTO #tempSensorIDs
             SELECT value FROM STRING_SPLIT(@sensor_ID_string,@sensor_ID_string_delimeter)
+
             
             WHILE(@count_ID_string>0)
             BEGIN
-
+                --check if sensor exists in DB
+                IF (SELECT COUNT(*) FROM dbo.sensor WHERE(sensor_ID = (SELECT TOP 1 id FROM #tempSensorIDs))) = 0
+                BEGIN
+                    SELECT 50108 AS ERRORNUMBER, CONCAT('Sensor does not exist ID: ',(SELECT TOP 1 id FROM #tempSensorIDs)) AS ERRORMESSAGE;
+                    INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50108,CONCAT('Sensor does not exist ID: ',(SELECT TOP 1 id FROM #tempSensorIDs))); 
+                    ROLLBACK TRANSACTION
+                    RETURN
+                END
                 INSERT INTO dbo.sensor_group(channel_ID,sensor_ID,valid_from,valid_to)
                 VALUES(@temp_channel_id,
                       (SELECT TOP 1 id FROM #tempSensorIDs),
@@ -142,8 +175,7 @@ BEGIN
 
             SELECT * FROM dbo.sensor_group
             
-            --testing purpose:
-            SELECT * FROM dbo.subscription
+        
         END
         COMMIT TRANSACTION
     END TRY
@@ -154,23 +186,20 @@ BEGIN
 
 END
 
---add a new channel with sensors
-EXEC dbo.sp_prj_subscribe @subscriber_id = 1, @valid_from_date = '2018-11-20 00:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
-                          @channel_description = 'a new one', @channel_name='bla bla',@sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
-
---update channel (update valid from and valid to date)
-EXEC dbo.sp_prj_subscribe @channel_id=1, @subscriber_id = 1, @valid_from_date = '2018-11-20 10:00:00 +01:00', @valid_to_date = '2018-12-15 23:59:00 +01:00', 
-                          @sensor_ID_string='4;5;9',@sensor_ID_string_delimeter=';'
-
                           SELECT COUNT(*) FROM dbo.subscription WHERE (subscriber_ID = 3 AND channel_ID = 2)
                           SELECT COUNT(*) 
             FROM dbo.subscription
             WHERE channel_id = 1 AND subscriber_ID = 1
 
 SELECT * FROM dbo.user_permission
-SELECT * FROM dbo.sensor_group
+SELECT * FROM dbo.sensor
 SELECT * FROM dbo.channel
 SELECT * FROM dbo.subscription
+SELECT * FROM dbo.sensor
+
+PRINT @@TRANCOUNT
+--not working
+exec dbo.sp_prj_subscribe @subscriber_id = 2, @sensor_ID_string = '1,2', @sensor_ID_string_delimeter = ',', @valid_from_date = '2018-11-20 10:00:00 +01:00', @valid_to_date = '2019-2-15 23:59:00 +01:00', @channel_id = 1;
 
 --later maybe, turn valid_from and valid_to into optional parameters....
 PRINT CONVERT(DATETIME2,GETDATE())AT TIME ZONE 'Central European Standard Time'
