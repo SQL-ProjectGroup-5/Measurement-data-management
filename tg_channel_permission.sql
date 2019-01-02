@@ -1,5 +1,5 @@
 --subscriber is only able to create channel if at least ONE sensor is readable!
-CREATE TRIGGER dbo.tg_channel_permission
+ALTER TRIGGER dbo.tg_channel_permission
 ON dbo.subscription
 AFTER INSERT, UPDATE
 AS
@@ -22,10 +22,12 @@ BEGIN
 	DECLARE @subscriber int;
     	DECLARE @channel int;
     	SELECT TOP 1 @subscriber = subscriber_ID, @channel = channel_ID FROM inserted;
-	IF ((SELECT count(*) FROM dbo.sensor_group sg left JOIN user_permission up ON sg.sensor_ID = up.sensor_ID WHERE sg.channel_id = @channel AND up.subscriber_ID = @subscriber) != (SELECT count(*) FROM dbo.sensor_group sg WHERE sg.channel_ID = @channel))
+	IF ((SELECT count(*) FROM dbo.sensor_group sg left JOIN user_permission up ON sg.sensor_ID = up.sensor_ID 
+        WHERE sg.channel_id = @channel AND up.subscriber_ID = @subscriber) 
+        != (SELECT count(*) FROM dbo.sensor_group sg WHERE sg.channel_ID = @channel))
 	BEGIN
 		 ROLLBACK TRANSACTION;
-         THROW 50300, 'Subscriber has no permition on Sensor', 1;
+         THROW 50300, 'Subscriber has no permition on sensor', 1;
          RETURN
 	END
     
