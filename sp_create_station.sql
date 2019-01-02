@@ -2,7 +2,8 @@
 -- Returncode 50201: INFORMATIONAL New location created
 -- Returncode 50203: Wrong parameters
 -- Returncode 50204: Wrong Location ID
--- Returncode 50205: Unknown Error
+-- Returncode 50204: Station name has to be unique
+-- Returncode 50206: Unknown Error
 CREATE PROCEDURE dbo.sp_create_station @name VARCHAR(255), @station_desc VARCHAR(255)=NULL, @location INT = NULL, @location_name VARCHAR(32) = NULL, @lat FLOAT = NULL, @long FLOAT = NULL
 AS
 BEGIN
@@ -39,7 +40,10 @@ BEGIN
 	BEGIN CATCH
 	ROLLBACK;
 		IF ERROR_NUMBER() = 547
-			SELECT 50204 AS ERRORCODE, 'Wrong location ID' AS ERRORMESSAGE; ELSE
-			SELECT 50205 AS ERRORCODE, 'Unknown error' AS ERRORMESSAGE;
+			SELECT 50204 AS ERRORCODE, 'Wrong location ID' AS ERRORMESSAGE; 
+		ELSE IF ERROR_NUMBER = 2627
+			SELECT 50205 AS ERRORCODE, 'Station name has to be unique' AS ERRORMESSAGE;
+		ELSE
+			SELECT 50206 AS ERRORCODE, 'Unknown error' AS ERRORMESSAGE; 
 	END CATCH
 END
