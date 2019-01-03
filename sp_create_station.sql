@@ -1,9 +1,17 @@
+/*
+This procedure is used to create an station with the corresponding location. The procedure automatically reuses locations if they are within range (10m).
+Alternatively, a station can be added to an existing location by specifying the location id.
+Optional parameters like the description of the station can also be passed to the procedure.
+Coordinates have to be specified according to the geodetic system (SRID 4326)
+The procedure uses the following returncodes which are returned by SELECT and written to the logging table. 
+
 -- Returncode 50200: INFORMATIONAL Already existing location reused
 -- Returncode 50201: INFORMATIONAL New location created
 -- Returncode 50203: Wrong parameters
 -- Returncode 50204: Wrong Location ID
 -- Returncode 50205: Station name has to be unique
 -- Returncode 50206: Unknown Error
+*/
 CREATE PROCEDURE dbo.sp_create_station @name VARCHAR(255), @station_desc VARCHAR(255)=NULL, @location INT = NULL, @location_name VARCHAR(32) = NULL, @lat FLOAT = NULL, @long FLOAT = NULL
 AS
 BEGIN
