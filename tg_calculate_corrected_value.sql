@@ -1,3 +1,9 @@
+/*
+This Trigger calculates the corrected value of a measurement if not already given. This is done by selecting the correction_function field from the sensor.
+The given mathematical function is used to generate a SELECT statement which is executed and the resulting value is written to the value_orig field.
+Since this trigger is executed every time a measurement comes in, the runtime is important. To minimize the time needed for execution, only the first value of an insert
+is processed (TOP 1 FROM INSERTED). Due to this reason, no entries in the logging table are written.
+*/
 CREATE TRIGGER dbo.tg_calculate_corrected_value_i
 ON dbo.measurement
 AFTER INSERT
