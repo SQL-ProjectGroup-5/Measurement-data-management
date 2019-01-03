@@ -7,14 +7,9 @@
 --50015: 'von Datum falsch'
 --50016: 'bis Datum falsch'
 
-
-SELECT * FROM dbo.subscriber
-SELECT * FROM dbo.subscription
-SELECT * FROM dbo.channel
-
 GO
 
-CREATE PROCEDURE dbo.sp_prj_subscribe
+ALTER PROCEDURE dbo.sp_prj_subscribe
     @subscriber_id INT,
     @channel_id INT = NULL,
     @valid_from_date char(40) = NULL,
@@ -119,7 +114,9 @@ BEGIN
             UPDATE dbo.subscription
             SET valid_from = @valid_from_date, valid_to = @valid_to_date
             WHERE(channel_ID = @channel_id AND subscriber_ID = @subscriber_id)
-            SELECT * FROM dbo.subscription
+
+             SELECT 50109 AS ERRORNUMBER, 'SUCCESS: updating channel' AS ERRORMESSAGE;
+                    INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50109,'SUCCESS: updating channel'); 
         END
         -- IF channel_id for subscriber_id does not exists try to insert new row into dbo.subsription, 
         --trigger tg_channel will start to check whether the user is allowed to subscribe a channel
@@ -164,8 +161,8 @@ BEGIN
                 @valid_from_date,
                 @valid_to_date)
 
-            SELECT * FROM dbo.sensor_group
-            
+             SELECT 50110 AS ERRORNUMBER, 'SUCCESS:  inserting subscription' AS ERRORMESSAGE;
+                    INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50110,'SUCCESS:  inserting subscription'); 
         
         END
         COMMIT TRANSACTION
