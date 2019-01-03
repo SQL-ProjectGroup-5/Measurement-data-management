@@ -5,7 +5,6 @@ AFTER INSERT, UPDATE
 AS
 BEGIN
 
-
     SET NOCOUNT ON;
 	DECLARE @subscriber int;
     	DECLARE @channel int;
