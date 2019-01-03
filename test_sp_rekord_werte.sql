@@ -1,5 +1,4 @@
 
-
 --GET MIN MAX over time period
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 5 ,@from_date = '2018-11-02 00:00:00 +01:00',@to_date = '2018-11-20 23:59:00 +01:00',@daily_evaluation= 0
 
@@ -9,6 +8,7 @@ EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 5 ,@from_date = '2018-
 --GET MIN MAX daily over period
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 5 ,@from_date = '2018-11-02 00:00:00 +01:00',@to_date = '2018-11-20 23:59:00 +01:00',@daily_evaluation= 1
 
+--choosing daily evaluation the SP turns from date time to 00:00:00 and to date time to 23:59:00 because evaluating daily can not use times between a day.
 EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 5 ,@from_date = '2018-11-02 2:00:00 +01:00',@to_date = '2018-11-20 10:04:23 +01:00',@daily_evaluation= 1
 
 
