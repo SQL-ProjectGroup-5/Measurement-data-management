@@ -1,38 +1,4 @@
-﻿--Selects zum Testen
-SELECT *
-FROM dbo.[location];
-SELECT *
-FROM dbo.station;
-SELECT *
-FROM dbo.[type];
-SELECT *
-FROM dbo.channel;
-SELECT *
-FROM dbo.sensor;
-
-SELECT *
-FROM dbo.measurement
-ORDER BY dbo.measurement.measure_time;
-
-SELECT *
-FROM dbo.sensor_group;
-SELECT *
-FROM dbo.subscriber;
-SELECT *
-FROM dbo.subscription
-SELECT *
-FROM dbo.user_permission
-SET DATEFORMAT ymd; 
-
-UPDATE dbo.user_permission 
-SET valid_to = '2018-12-12 00:00:00 +01:00' 
-WHERE (subscriber_id = 1 AND sensor_ID = 4)
-
-
-SELECT COUNT(*) 
-            FROM dbo.user_permission 
-            WHERE  subscriber_ID = 1 AND (GETDATE() NOT BETWEEN valid_from AND valid_to) AND sensor_ID =5
---Error number:
+﻿--Error number:
 --50001: 'Sensor mit ID ',@sensor_id,' nicht vorhanden!'
 --50002: 'Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id
 --50003: 'Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id
@@ -52,7 +18,7 @@ SELECT COUNT(*)
 -- datum als String übergeben, da sonst ein falsches datum nicht überprueft werden kann, weil datumsuepruefung auf selben Level wie Try und Catch ist!
 --Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
-ALTER PROCEDURE dbo.sp_rekord_werte
+CREATE PROCEDURE dbo.sp_rekord_werte
     @subscriber_id INT,
     @sensor_id INT,
     @from_date char(40),
@@ -137,16 +103,13 @@ BEGIN
                 END
 
                 --get days out of range: then transform starting date starts at: 00:00 and ends at 23:59
-                --SET @start_day = CONVERT(Date@from_date)
-                
-               
-                SET @from_date = CONVERT(DATETIME2,CONVERT(DATE,@from_date))AT TIME ZONE 'Central European Standard Time'
-                
-                SET @to_date = DATEADD(MINUTE,59,DATEADD(HOUR,23,(CONVERT(DATETIME2,@from_date))AT TIME ZONE 'Central European Standard Time')) --time set to 23:59
-                --PRINT(@buffer_datetime2)
                 --not using split String functions, because delimeter might change!!
                 --built in convert functions are more agile.
 
+                SET @from_date = CONVERT(DATETIME2,CONVERT(DATE,@from_date))AT TIME ZONE 'Central European Standard Time'
+                
+                SET @to_date = DATEADD(MINUTE,59,DATEADD(HOUR,23,(CONVERT(DATETIME2,@from_date))AT TIME ZONE 'Central European Standard Time')) --time set to 23:59
+                
                 CREATE TABLE #tempValues --creates a temporary table  
                 (  
                     nr  INT IDENTITY(1,1),
@@ -156,13 +119,9 @@ BEGIN
                     CONSTRAINT PK_nr PRIMARY KEY (nr)
                 )
     
-
                 WHILE @countDays >0
                 BEGIN
-                    --INSERT INTO #tempValues(typ,messwert,datum)
-                    --VALUES('min',21.22,'2018-11-11');
-
-                    --new version: select all measurements in time range and buffer in table
+                    
                  
                     INSERT INTO #tempValues (typ,messwert,datum)
                     SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
@@ -173,16 +132,9 @@ BEGIN
                     value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date)) 
                     AND (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date )
 
-                    PRINT(@from_date)
-                    PRINT(@to_date)
-
                     --add 1 day 
                     SET @from_date = DATEADD(DAY,1,(CONVERT(DATETIME2,@from_date))AT TIME ZONE 'Central European Standard Time')
                     SET @to_date = DATEADD(DAY,1,(CONVERT(DATETIME2,@to_date))AT TIME ZONE 'Central European Standard Time')
-
-                   
-                    --PRINT @from_date
-                    --PRINT DATEADD(DAY,@staticCountDays-@countDays, CONVERT(DATETIME2,@from_date))
                     SET @countDays -= 1;
                 END
                 
@@ -191,7 +143,6 @@ BEGIN
             END
             ELSE --return min, max value over a period of time
             BEGIN
-                
                 
                 SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE 
                 value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (sensor_ID = @sensor_id AND measure_time BETWEEN @from_date AND @to_date ))
@@ -210,51 +161,3 @@ BEGIN
     END CATCH
     
 END
-
-
-
----------------------------------------
---TESTING:
-
-EXEC dbo.sp_rekord_werte @subscriber_id = 1, @sensor_id = 4 ,@from_date = '2018-11-02 00:00:00 +01:00',@to_date = '2018-11-20 23:59:00 +01:00',@daily_evaluation= 1
-
-
-SELECT 'min' AS TYPE, min(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-04 00:00:00 +01:00' AND '2018-11-04 23:59:00 +01:00')
-
-
-SELECT * FROM dbo.measurement WHERE sensor_ID=4 AND measure_time BETWEEN '2018-11-20 00:00:00 +01:00'AND '2019-11-20 23:59:00 +01:00'
-
-SELECT TRY_CONVERT([date], '12/32/2010') AS Result;  
-
-SELECT COUNT(*) FROM dbo.user_permission sub WHERE 1 = sub.subscriber_ID
-
-SELECT GETDATE() as sss
-
-SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND (GETDATE() BETWEEN per.valid_from AND per.valid_to OR per.valid_to IS NULL)-- OR (per.valid_from >= GETDATE() AND per.valid_to IS NULL)
-
-SELECT COUNT(*) FROM dbo.user_permission per WHERE 1 = per.subscriber_ID AND per.valid_to IS NULL
-
-
-SELECT COUNT(*)
-            FROM dbo.sensor sen
-            INNER  JOIN dbo.measurement meas ON meas.sensor_ID = sen.sensor_ID
-            WHERE (measure_time BETWEEN '2018-11-01' AND '2018-12-02') AND sen.sensor_ID = 4
-
-SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00') ORDER BY measure_time
-
-SELECT * FROM dbo.measurement WHERE(sensor_ID = 4 AND  measure_time BETWEEN '2018-11-13 ' AND '2018-11-13 ') ORDER BY measure_time
-
-SELECT * FROM dbo.measurement WHERE(sensor_ID = 4)  ORDER BY value_corrected
-
- SELECT MAX(value_corrected) AS max, MIN(value_corrected) AS min
-                FROM dbo.measurement
-                WHERE ((('2018-11-01 00:00:00 +01:00' = '2018-11-01 00:00:00 +01:00' AND DATEDIFF(Day,'2018-11-17 00:00:00 +01:00',measure_time) =1)) AND sensor_ID = 4)
-
-
-DECLARE @datetime2 datetime2 = '2007-01-01 13:10:10.1111111';  
-SELECT '1 millisecond', DATEADD(MINUTE,1,@datetime2),DATEADD(MINUTE,1,@datetime2);
-
-
-SELECT TOP 1 'min' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE value_corrected = (SELECT MIN(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00' AND sensor_ID = 4))
-UNION
-SELECT TOP 1 'max' AS typ, value_corrected, measure_time FROM dbo.measurement WHERE value_corrected = (SELECT MAX(value_corrected) FROM dbo.measurement WHERE (measure_time BETWEEN '2018-11-17 00:00:00 +01:00' AND '2018-11-17 23:59:59 +01:00' AND sensor_ID = 4)) 
