@@ -14,7 +14,7 @@ SELECT * FROM dbo.channel
 
 GO
 
-ALTER PROCEDURE dbo.sp_prj_subscribe
+CREATE PROCEDURE dbo.sp_prj_subscribe
     @subscriber_id INT,
     @channel_id INT = NULL,
     @valid_from_date char(40) = NULL,
@@ -91,15 +91,6 @@ BEGIN
         INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50102,'Subscriber ID not available');
         RETURN
     END
-    -- --check if subscriber is linked to a channel, has to be checked otherwise an error will occur
-    -- IF (SELECT COUNT(*) FROM dbo.subscription WHERE (subscriber_ID = @subscriber_id AND channel_ID = @channel_ID)) = 0
-    -- BEGIN
-    --     SELECT 50103 AS ERRORNUMBER, 'Subscriber ID is not linked to any channel!' AS ERRORMESSAGE; 
-    --     INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'sp_subscribe',50103,'Subscriber ID is not linked to any channel!');
-    --     RETURN
-    -- END
-    
-
     --check if subscriber has a corresponding CHANNEL ID, if not could be a new channel or updating failed!
     IF (SELECT COUNT(*) 
             FROM dbo.subscription
@@ -125,7 +116,6 @@ BEGIN
             FROM dbo.subscription
             WHERE channel_id = @channel_id AND subscriber_ID = @subscriber_id) > 0   
         BEGIN
-            PRINT 'in HERE'
             UPDATE dbo.subscription
             SET valid_from = @valid_from_date, valid_to = @valid_to_date
             WHERE(channel_ID = @channel_id AND subscriber_ID = @subscriber_id)
@@ -186,20 +176,3 @@ BEGIN
     END CATCH
 
 END
-
-                          SELECT COUNT(*) FROM dbo.subscription WHERE (subscriber_ID = 3 AND channel_ID = 2)
-                          SELECT COUNT(*) 
-            FROM dbo.subscription
-            WHERE channel_id = 1 AND subscriber_ID = 1
-
-SELECT * FROM dbo.user_permission
-SELECT * FROM dbo.sensor
-SELECT * FROM dbo.channel
-SELECT * FROM dbo.subscription
-SELECT * FROM dbo.sensor
-
-
---later maybe, turn valid_from and valid_to into optional parameters....
-PRINT CONVERT(DATETIME2,GETDATE())AT TIME ZONE 'Central European Standard Time'
-
-SELECT COUNT(*) FROM dbo.subscriber WHERE (subscriber_ID = 2)
