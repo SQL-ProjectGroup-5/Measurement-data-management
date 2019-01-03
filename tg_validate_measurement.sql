@@ -7,9 +7,9 @@ The trigger uses the followig returncodes, which are only written to the logging
 -- Returncode 50400: Set invalid bit because measurement is out of range
 -- Returncode 50401: Set invalid bit because max change within timeframe is exceeded
 */
-CREATE TRIGGER dbo.tg_validate_measurement_iu
+CREATE TRIGGER dbo.tg_validate_measurement_i
 ON dbo.measurement
-FOR INSERT, UPDATE
+FOR INSERT
 AS
 BEGIN
 	SET NOCOUNT ON;
