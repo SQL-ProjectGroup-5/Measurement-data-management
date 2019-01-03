@@ -17,9 +17,10 @@ BEGIN
         WHERE sg.channel_id = @channel AND up.subscriber_ID = @subscriber) 
         != (SELECT count(*) FROM dbo.sensor_group sg WHERE sg.channel_ID = @channel))
 	BEGIN
-		 ROLLBACK TRANSACTION;
-         THROW 50300, 'Subscriber has no permition to read all sensors linked to the channel', 1;
-         RETURN
+		ROLLBACK TRANSACTION;
+        THROW 50300, 'Subscriber has no permission to read all sensors linked to the channel', 1;
+        INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(),'tg_channel_permission', 50300, 'Subscriber has no permission to read all sensors linked to the channel'); 
+        RETURN
 	END
     
 END
