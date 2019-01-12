@@ -1,5 +1,5 @@
 --subscriber is only able to create channel if at least ONE sensor is readable!
-CREATE TRIGGER dbo.tg_channel_permission
+CREATE TRIGGER dbo.tg_channel_permission_IU
 ON dbo.subscription
 AFTER INSERT, UPDATE
 AS
