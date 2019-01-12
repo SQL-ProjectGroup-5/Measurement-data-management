@@ -5,7 +5,7 @@ Since this trigger is executed every time a measurement comes in, the runtime is
 is processed (TOP 1 FROM INSERTED). Due to this reason, no entries in the logging table are written.
 -- Returncode 60600: Original Value was changed
 */
-CREATE TRIGGER dbo.tg_calculate_corrected_value_iu ON dbo.measurement
+CREATE TRIGGER dbo.tg_calc_corr_value_iu ON dbo.measurement
 FOR INSERT, UPDATE
 AS
 BEGIN
