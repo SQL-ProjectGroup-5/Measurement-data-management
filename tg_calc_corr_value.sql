@@ -1,11 +1,11 @@
 /*
 This Trigger calculates the corrected value of a measurement if not already given. This is done by selecting the correction_function field from the sensor.
-The given mathematical function is used to generate a SELECT statement which is executed and the resulting value is written to the value_orig field.
+The given mathematical function is used to generate a SELECT statement which is executed and the resulting value is written to the value_corrected field.
 Since this trigger is executed every time a measurement comes in, the runtime is important. To minimize the time needed for execution, only the first value of an insert/update
 is processed (TOP 1 FROM INSERTED). Due to this reason, no entries in the logging table are written.
--- Returncode 60600: Original Value was changed
+-- Returncode 50600: Original Value was changed
 */
-CREATE TRIGGER dbo.tg_calculate_corrected_value_iu ON dbo.measurement
+CREATE TRIGGER dbo.tg_calc_corr_value_iu ON dbo.measurement
 FOR INSERT, UPDATE
 AS
 BEGIN

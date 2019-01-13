@@ -9,13 +9,7 @@ CREATE TRIGGER dbo.tg_log_subscriber_iu ON dbo.subscriber
 FOR INSERT, UPDATE
 AS
 BEGIN
-	DECLARE @id VARCHAR(32);	DECLARE @name VARCHAR(32);
-	SELECT TOP 1 @name = name, @id = subscriber_ID FROM INSERTED;
-	IF (EXISTS (SELECT * FROM INSERTED) AND EXISTS (SELECT * FROM DELETED))
-	BEGIN
-		INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(), 'tg_log_subscriber', 50500, 'Property of subscriber was updated ID: ' + @id + ' name: ' + @name);
-	END ELSE IF (EXISTS (SELECT * FROM INSERTED))
-	BEGIN
-		INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) VALUES (SUSER_NAME(), 'tg_log_subscriber', 50501, 'New subscriber added: ' + @id + ' name: ' + @name);
-	END
+	SET NOCOUNT ON;
+		INSERT INTO dbo.logging (causing_user,involved_trigger,resulting_code,resulting_message) SELECT SUSER_NAME(), 'tg_log_subscriber',50500, 'Property of subscriber was updatet ID: ' + CAST(i.subscriber_ID AS VARCHAR) + 'name: ' + i.name FROM inserted as i;
+
 END
