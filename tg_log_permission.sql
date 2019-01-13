@@ -9,7 +9,12 @@ CREATE TRIGGER dbo.tg_log_permission_iu ON dbo.user_permission
 FOR INSERT, UPDATE
 AS
 BEGIN
-		SET NOCOUNT ON;
-		INSERT INTO dbo.logging (causing_user,involved_trigger,resulting_code,resulting_message) SELECT SUSER_NAME(), 'tg_log_permission',50502, 'Property of permission was updatet ID: ' + CAST(i.permission_ID AS VARCHAR) + 'name: ' + i.name FROM inserted as i;
-
+	SET NOCOUNT ON;
+	IF (EXISTS (SELECT * FROM INSERTED) AND EXISTS (SELECT * FROM DELETED))
+	BEGIN
+		INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) SELECT SUSER_NAME(), 'tg_log_permission', 50500, 'Property of permission was updated sensor ID: ' + CAST(i.sensor_ID AS VARCHAR)+ ' subscriber ID: ' + CAST(i.subscriber_ID AS VARCHAR) FROM deleted AS i;
+	END ELSE IF (EXISTS (SELECT * FROM INSERTED))
+	BEGIN
+		INSERT INTO dbo.logging (causing_user, involved_trigger, resulting_code, resulting_message) SELECT SUSER_NAME(), 'tg_log_permission', 50500, 'New permission was inserted sensor ID: ' + CAST(i.sensor_ID AS VARCHAR)+ ' subscriber ID: ' + CAST(i.subscriber_ID AS VARCHAR) FROM inserted AS i;
+	END
 END
