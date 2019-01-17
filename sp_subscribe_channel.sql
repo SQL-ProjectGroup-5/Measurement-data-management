@@ -1,11 +1,13 @@
 
---Error number:
---50011: 'Sensor mit ID ',@sensor_id,' nicht vorhanden!'
---50012: 'Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id
---50013: 'Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id
---50014: 'von-Datum groesser als ist-Datum'
---50015: 'von Datum falsch'
---50016: 'bis Datum falsch'
+--The aim of the procedure is to add a new subscription, 
+-- which enables a subscriber to read data from a couple of sensors via a channel. 
+-- If a new subscription is inserted, a new CHANNEL and a correspond-ing SENSOR_GROUP entry is inserted as well. 
+-- To identify which sensors are associated with a channel the table SENSOR_GROUP is significant.
+-- A subscriber can have multiple channels, and each channel can have more than one sensor. During insertion process,
+-- a trigger prevents the subscriber from creat-ing channels and attaching sensor without permission. 
+-- This security feature allows to protect privacy, because subscribers are not able to add sensors from other subscribers.
+-- Only administrators can change the sensor permission int the USER_PERMITION table. Another task of the stored procedure 
+-- is to update an existing channel if it is expired.  
 
 GO
 CREATE PROCEDURE dbo.sp_subscribe_channel
