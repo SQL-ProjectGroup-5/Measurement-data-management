@@ -1,14 +1,9 @@
-﻿
-
---The aim of the procedure is to add a new subscription, 
--- which enables a subscriber to read data from a couple of sensors via a channel. 
--- If a new subscription is inserted, a new CHANNEL and a correspond-ing SENSOR_GROUP entry is inserted as well. 
--- To identify which sensors are associated with a channel the table SENSOR_GROUP is significant.
--- A subscriber can have multiple channels, and each channel can have more than one sensor. During insertion process,
--- a trigger prevents the subscriber from creat-ing channels and attaching sensor without permission. 
--- This security feature allows to protect privacy, because subscribers are not able to add sensors from other subscribers.
--- Only administrators can change the sensor permission int the USER_PERMITION table. Another task of the stored procedure 
--- is to update an existing channel if it is expired.  
+﻿-- The aim of the stored procedure (SP) is to 
+-- enable users the possibility to get the minimum (min) 
+-- and maximum (max) measurement value over a period of time. 
+-- The start and end date can be specified via parameters. 
+-- Depending on the parameters, the SP can return the total min/max 
+-- value over the provided period, or min/max values per day. 
 
 GO
 CREATE PROCEDURE dbo.sp_analyze_values
