@@ -1,22 +1,15 @@
-﻿--Error number:
---50001: 'Sensor mit ID ',@sensor_id,' nicht vorhanden!'
---50002: 'Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id
---50003: 'Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id
---50004: 'von-Datum groesser als ist-Datum'
---50005: 'von Datum falsch'
---50006: 'bis Datum falsch'
+﻿
 
+--The aim of the procedure is to add a new subscription, 
+-- which enables a subscriber to read data from a couple of sensors via a channel. 
+-- If a new subscription is inserted, a new CHANNEL and a correspond-ing SENSOR_GROUP entry is inserted as well. 
+-- To identify which sensors are associated with a channel the table SENSOR_GROUP is significant.
+-- A subscriber can have multiple channels, and each channel can have more than one sensor. During insertion process,
+-- a trigger prevents the subscriber from creat-ing channels and attaching sensor without permission. 
+-- This security feature allows to protect privacy, because subscribers are not able to add sensors from other subscribers.
+-- Only administrators can change the sensor permission int the USER_PERMITION table. Another task of the stored procedure 
+-- is to update an existing channel if it is expired.  
 
---day month year
---Ideen für Error-Handling
--- Subscriber der nicht die Berechtigung eines Sensors beitzt, bzw ihn nicht subscript bekommt Fehler
--- Datum wurde im falschen Format übergeben: yyyy-mm-dd
--- Permission abgelaufen, aus Tabelle User-permission auslesen
--- Sensor muss gültig sein, sonst Fehler
-
---Ergebnisrückgabe mittels SELECT --> einfach für Frontend
--- datum als String übergeben, da sonst ein falsches datum nicht überprueft werden kann, weil datumsuepruefung auf selben Level wie Try und Catch ist!
---Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
 CREATE PROCEDURE dbo.sp_analyze_values
     @subscriber_id INT,
