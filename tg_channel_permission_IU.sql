@@ -1,4 +1,9 @@
---subscriber is only able to create channel if at least ONE sensor is readable!
+--The permission check trigger (aka “tg_channel_permission_IU”) 
+--is linked to the subscription table and will start if INSERT or 
+--UPDATE statements are executed. It supports the procedure “sp_subscribe_channel” 
+--and checks if a user has permission to subscribe a sensor. The trigger can-cels the transaction, 
+--in addition to that, the creating-channel-process will be rolled back.
+
 CREATE TRIGGER dbo.tg_channel_permission_IU
 ON dbo.subscription
 AFTER INSERT, UPDATE
@@ -27,3 +32,4 @@ END
 
 
 
+SELECT * FROM db.logging
