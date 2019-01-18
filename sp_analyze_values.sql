@@ -1,22 +1,10 @@
-﻿--Error number:
---50001: 'Sensor mit ID ',@sensor_id,' nicht vorhanden!'
---50002: 'Subscriber hat keine Zugriffsrechte auf Sensor: ',@sensor_id
---50003: 'Subscriber Zugriffsrecht abgelaufen fuer Sensor: ', @sensor_id
---50004: 'von-Datum groesser als ist-Datum'
---50005: 'von Datum falsch'
---50006: 'bis Datum falsch'
+﻿-- The aim of the stored procedure (SP) is to 
+-- enable users the possibility to get the minimum (min) 
+-- and maximum (max) measurement value over a period of time. 
+-- The start and end date can be specified via parameters. 
+-- Depending on the parameters, the SP can return the total min/max 
+-- value over the provided period, or min/max values per day. 
 
-
---day month year
---Ideen für Error-Handling
--- Subscriber der nicht die Berechtigung eines Sensors beitzt, bzw ihn nicht subscript bekommt Fehler
--- Datum wurde im falschen Format übergeben: yyyy-mm-dd
--- Permission abgelaufen, aus Tabelle User-permission auslesen
--- Sensor muss gültig sein, sonst Fehler
-
---Ergebnisrückgabe mittels SELECT --> einfach für Frontend
--- datum als String übergeben, da sonst ein falsches datum nicht überprueft werden kann, weil datumsuepruefung auf selben Level wie Try und Catch ist!
---Date input as string, because if the input is datatype 'date' the error level in case of a wrong date is not in range between 10-19 thus cannot be handled in trycatch block!
 GO
 CREATE PROCEDURE dbo.sp_analyze_values
     @subscriber_id INT,
